@@ -9,19 +9,16 @@ export async function middleware(req) {
 
   const { pathname } = req.nextUrl;
 
-  // Public routes allowed
   const publicRoutes = ["/login", "/menu"];
 
   if (publicRoutes.includes(pathname)) {
     return NextResponse.next();
   }
 
-  // If no token → redirect to login
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
-  // Only admin allowed
   if (token.role !== "admin") {
     return NextResponse.redirect(new URL("/login", req.url));
   }
@@ -30,5 +27,8 @@ export async function middleware(req) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/auth/:path*"
+  ],
 };
