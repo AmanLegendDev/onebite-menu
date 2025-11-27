@@ -9,26 +9,22 @@ export async function middleware(req) {
 
   const { pathname } = req.nextUrl;
 
-  const publicRoutes = ["/login", "/menu"];
-
-  if (publicRoutes.includes(pathname)) {
+  // PUBLIC ROUTES
+  if (pathname.startsWith("/login") || pathname.startsWith("/menu")) {
     return NextResponse.next();
   }
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-
-  if (token.role !== "admin") {
-    return NextResponse.redirect(new URL("/login", req.url));
+  // ONLY ADMIN PAGES PROTECTED
+  if (pathname.startsWith("/admin")) {
+    if (!token) return NextResponse.redirect(new URL("/login", req.url));
+    if (token.role !== "admin")
+      return NextResponse.redirect(new URL("/login", req.url));
   }
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/api/auth/:path*"
-  ],
+  matcher: ["/admin/:path*"],
 };
+
