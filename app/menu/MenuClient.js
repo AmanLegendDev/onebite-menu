@@ -5,8 +5,10 @@ import { motion } from "framer-motion";
 import { useCart } from "@/app/context/CartContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useRef } from "react";
 
 export default function MenuClient({ categories, items, activeCategoryId }) {
+  const tabsRef = useRef(null);
   const router = useRouter();
   const { cart, addToCart, increaseQty, decreaseQty } = useCart();
 
@@ -57,14 +59,32 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
       <h1 className="text-4xl font-extrabold text-[#111] mb-6">Menu</h1>
 
       {/* CATEGORY TABS */}
-      <div className="flex gap-3 overflow-x-auto no-scrollbar pb-4 sticky top-0 bg-[#f8f8f8] z-10 pt-2">
+    
+
+<div
+  ref={tabsRef}
+  className="flex gap-3 overflow-x-auto no-scrollbar pb-4 sticky top-0 bg-[#f8f8f8] z-10 pt-2"
+>
+
         {liveCategories.map((cat) => (
           <motion.button
             key={cat._id}
-            onClick={() => {
-              const id = String(cat._id);
-              router.push(`/menu/${id}`); // 🔥 scroll nahi, naya URL
-            }}
+          onClick={() => {
+  const id = String(cat._id);
+
+  // store current scroll
+  const x = tabsRef.current?.scrollLeft;
+
+  router.push(`/menu/${id}`);
+
+  // restore scroll after route change
+  setTimeout(() => {
+    if (tabsRef.current) {
+      tabsRef.current.scrollLeft = x;
+    }
+  }, 10);
+}}
+
             whileTap={{ scale: 0.9 }}
             className={`px-4 py-2 rounded-full text-sm font-medium transition 
             ${
