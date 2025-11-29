@@ -1,105 +1,90 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import { useCart } from "@/app/context/CartContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useRef } from "react";
 
 export default function MenuClient({ categories, items, activeCategoryId }) {
-  const tabsRef = useRef(null);
   const router = useRouter();
+  const tabsRef = useRef(null);
+
   const { cart, addToCart, increaseQty, decreaseQty } = useCart();
 
-  // --- REALTIME STATES ---
-  const [liveCategories, setLiveCategories] = useState(categories);
+  const [liveCategories] = useState(categories);
   const [liveItems, setLiveItems] = useState(items);
-
 
   const [selected, setSelected] = useState({});
   const [recentOrder, setRecentOrder] = useState(null);
 
-  // If prop change (different URL), update state
- const activeCat = activeCategoryId || categories[0]?._id;
+  const activeCat = activeCategoryId || categories[0]?._id;
 
-
-  // Load recent order
+  // Load last order
   useEffect(() => {
-    const saved = typeof window !== "undefined"
-      ? localStorage.getItem("latestOrder")
-      : null;
+    const saved = localStorage.getItem("latestOrder");
     if (saved) setRecentOrder(JSON.parse(saved));
   }, []);
 
-  // Sync selected with cart
+  // Sync cart qty with UI
   useEffect(() => {
     const updated = {};
     cart.forEach((item) => (updated[item._id] = item.qty));
     setSelected(updated);
   }, [cart]);
 
-  // -----------------------------
-  // 🔥 NO REALTIME MENU RELOADING
-  // -----------------------------
+  // No realtime — just initial items
   useEffect(() => {
-    setLiveItems(items)
-  }, []);
+    setLiveItems(items);
+  }, [items]);
 
-  const totalPrice = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
-  const totalQty = cart.reduce((sum, i) => sum + i.qty, 0);
+  const totalQty = cart.reduce((s, i) => s + i.qty, 0);
+  const totalPrice = cart.reduce((s, i) => s + i.qty * i.price, 0);
 
-  // 👉 Ab sirf ACTIVE category hi render karenge
   const visibleCategories = liveCategories.filter(
     (cat) => String(cat._id) === String(activeCat)
   );
 
   return (
     <div className="min-h-screen bg-[#f8f8f8] px-5 py-8 pb-24">
+
       <h1 className="text-4xl font-extrabold text-[#111] mb-6">Menu</h1>
 
-      {/* CATEGORY TABS */}
-    
-
-<div
-  ref={tabsRef}
-  className="flex gap-3 overflow-x-auto no-scrollbar pb-4 sticky top-0 bg-[#f8f8f8] z-10 pt-2"
->
-
+      {/* ---------------- CATEGORY TABS ---------------- */}
+      <div
+        ref={tabsRef}
+        className="flex gap-3 overflow-x-auto no-scrollbar pb-4 sticky top-0 bg-[#f8f8f8] z-10 pt-2"
+      >
         {liveCategories.map((cat) => (
           <motion.button
             key={cat._id}
-          onClick={() => {
-  const id = String(cat._id);
+            onClick={() => {
+              const savedScroll = tabsRef.current?.scrollLeft;
 
-  // store current scroll
-  const x = tabsRef.current?.scrollLeft;
+              router.push(`/menu/${String(cat._id)}`);
 
-  router.push(`/menu/${id}`);
-
-  // restore scroll after route change
-  setTimeout(() => {
-    if (tabsRef.current) {
-      tabsRef.current.scrollLeft = x;
-    }
-  }, 10);
-}}
-
+              setTimeout(() => {
+                if (tabsRef.current) {
+                  tabsRef.current.scrollLeft = savedScroll;
+                }
+              }, 10);
+            }}
             whileTap={{ scale: 0.9 }}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition 
-            ${
-              String(activeCat) === String(cat._id)
-                ? "bg-[#ff6a3d] text-white shadow-md"
-                : "bg-white text-[#333] border border-gray-300"
-            }`}
+            className={`px-4 py-2 rounded-full text-sm font-medium transition
+              ${
+                String(activeCat) === String(cat._id)
+                  ? "bg-[#ff6a3d] text-white shadow-md"
+                  : "bg-white text-[#333] border border-gray-300"
+              }`}
           >
             {cat.name}
           </motion.button>
         ))}
       </div>
 
+      {/* ---------------- LAST ORDER ---------------- */}
       {recentOrder && (
-        <div className="w-full bg-white shadow-lg border-b px-5 py-3 flex justify-between items-center z-50 mt-3">
+        <div className="w-full bg-white shadow-lg border-b px-5 py-3 flex justify-between items-center mt-3">
           <p className="font-semibold text-[#111]">
             Last order • Table {recentOrder.table}
           </p>
@@ -112,6 +97,7 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
         </div>
       )}
 
+      {/* ---------------- ITEMS GRID ---------------- */}
       <div className="mt-6 space-y-14">
         {visibleCategories.map((cat) => (
           <section key={cat._id}>
@@ -128,10 +114,10 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
             >
               {liveItems
                 .filter(
-                   (item) =>
+                  (item) =>
                     String(item.category) === String(cat._id) ||
-                     String(item.category?._id) === String(cat._id)
-       )
+                    String(item.category?._id) === String(cat._id)
+                )
                 .map((item) => {
                   const inCart = cart.find((c) => c._id === item._id);
                   const qty = inCart?.qty ?? 0;
@@ -163,6 +149,7 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
                           {item.description}
                         </p>
 
+                        {/* Quantity Control */}
                         <div className="flex items-center justify-center gap-3 mt-4">
                           <button
                             onClick={() => decreaseQty(item._id)}
@@ -177,9 +164,7 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
 
                           <button
                             onClick={() => {
-                              qty === 0
-                                ? addToCart(item)
-                                : increaseQty(item._id);
+                              qty === 0 ? addToCart(item) : increaseQty(item._id);
                             }}
                             className="bg-[#ff6a3d] text-white w-8 h-8 flex items-center justify-center rounded-full text-lg font-bold"
                           >
@@ -193,7 +178,7 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
                           </p>
 
                           {isSelected ? (
-                            <button className="px-4 py-1.5 rounded-full text-xs font-semibold bg-green-500 text-white flex justify-between">
+                            <button className="px-4 py-1.5 rounded-full text-xs font-semibold bg-green-500 text-white">
                               Selected ({selected[item._id]})
                             </button>
                           ) : (
@@ -209,12 +194,12 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
                                   [item._id]: qty,
                                 }));
                               }}
-                              className={`px-4 py-1.5 rounded-full text-xs font-semibold transition 
-                              ${
-                                qty < 1
-                                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                  : "bg-[#ff6a3d] text-white"
-                              }`}
+                              className={`px-4 py-1.5 rounded-full text-xs font-semibold 
+                                ${
+                                  qty < 1
+                                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                                    : "bg-[#ff6a3d] text-white"
+                                }`}
                             >
                               Select
                             </motion.button>
@@ -229,16 +214,15 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
         ))}
       </div>
 
+      {/* ---------------- CART FOOTER ---------------- */}
       {totalQty > 0 && (
-        <div className="fixed bottom-0 left-0 w-full bg-white shadow-lg border-t border-gray-300 px-5 py-3 flex justify-between items-center z-50">
+        <div className="fixed bottom-0 left-0 w-full bg-white shadow-lg border-t px-5 py-3 flex justify-between items-center z-50">
           <p className="font-semibold text-[#111]">
             {totalQty} items • ₹{totalPrice}
           </p>
           <button
+            onClick={() => router.push("/order-review")}
             className="bg-[#ff6a3d] text-white px-6 py-2 rounded-full font-semibold"
-            onClick={() => {
-              router.push("/order-review");
-            }}
           >
             process
           </button>
