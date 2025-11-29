@@ -125,7 +125,11 @@ setLiveItems(freshItems);
               viewport={{ once: true }}
             >
               {liveItems
-                .filter((item) => item.category?._id === cat._id)
+                .filter(
+                   (item) =>
+                    String(item.category) === String(cat._id) ||
+                     String(item.category?._id) === String(cat._id)
+       )
                 .map((item) => {
                   const inCart = cart.find((c) => c._id === item._id);
                   const qty = inCart?.qty ?? 0;
