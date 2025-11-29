@@ -38,28 +38,10 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
   }, [cart]);
 
   // -----------------------------
-  // 🔥 REALTIME MENU RELOADING
+  // 🔥 NO REALTIME MENU RELOADING
   // -----------------------------
   useEffect(() => {
- async function reloadMenu() {
-  try {
-   const resItems = await fetch("/api/items");
-const freshItems = await resItems.json();
-setLiveItems(freshItems);
-
-
-   
-    // ❌ Categories NOT reloaded
-  } catch (err) {
-    console.log("Realtime menu fetch error:", err);
-  }
-}
-
-
-    reloadMenu(); // initial load
-
-    const interval = setInterval(reloadMenu, 10000); 
-    return () => clearInterval(interval);
+    setLiveItems(items)
   }, []);
 
   const totalPrice = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
