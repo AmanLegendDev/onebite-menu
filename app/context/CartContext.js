@@ -73,12 +73,15 @@ export function CartProvider({ children }) {
     );
   }
 
-  function clearCart() {
-    setCart([]);
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("cart_data");
-    }
+function clearCart() {
+  setCart([]);
+
+  if (typeof window !== "undefined") {
+    localStorage.removeItem("cart_data");   // your main key
+    localStorage.removeItem("cartItems");   // 🔥 second key phone/Vercel uses
   }
+}
+
 
   return (
     <CartContext.Provider

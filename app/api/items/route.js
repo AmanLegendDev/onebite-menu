@@ -20,23 +20,41 @@ export async function POST(req) {
     const category = formData.get("category");
     const file = formData.get("image");
 
-    let uploadedImageUrl = "";
+let uploadedImageUrl = "";
 
-    if (file && typeof file === "object") {
-      const bytes = await file.arrayBuffer();
-      const buffer = Buffer.from(bytes);
+if (file && file.size > 0) {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Only image files are allowed");
+  }
 
-      const uploadRes = await new Promise((resolve, reject) => {
-        cloudinary.uploader
-          .upload_stream({ folder: "menu-items" }, (err, result) => {
-            if (err) reject(err);
-            else resolve(result);
-          })
-          .end(buffer);
-      });
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
 
-      uploadedImageUrl = uploadRes.secure_url;
-    }
+  const mimeType = file.type;
+  const ext = mimeType.split("/")[1];
+
+  const uploadRes = await new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        folder: "menu-items",
+        resource_type: "image",
+        format: ext,
+      },
+      (err, result) => {
+        if (err) reject(err);
+        else resolve(result);
+      }
+    );
+
+    stream.end(buffer);
+  });
+
+  uploadedImageUrl = uploadRes.secure_url;
+}
+
+
+
+
 
     const slug = slugify(name, { lower: true });
 
@@ -51,10 +69,9 @@ export async function POST(req) {
 
     return NextResponse.json(item);
   } catch (err) {
-    return NextResponse.json(
-      { error: err.message },
-      { status: 500 }
-    );
+    console.error("ITEM POST ERROR FULL:", err);
+return NextResponse.json({ error: err.message }, { status: 500 });
+
   }
 }
 

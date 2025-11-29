@@ -30,7 +30,7 @@ export default function EditItemPage({ params }) {
   }
 
   async function loadItem() {
-    fetch(`/api/items/${params.id}`, { cache: "no-store" })
+    const res = await fetch(`/api/items/${params.id}`, { cache: "no-store" })
     const data = await res.json();
 
     setItem(data);

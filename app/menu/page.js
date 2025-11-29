@@ -1,21 +1,20 @@
-import MenuClient from "./MenuClient";
+import { redirect } from "next/navigation";
 import { connectDB } from "@/lib/db";
 import Category from "@/models/Category";
-import MenuItems from "@/models/MenuItems";
-export const dynamic = "force-dynamic";
-export const revalidate = false;
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function MenuPage() {
   await connectDB();
 
   const categories = await Category.find().lean();
-  const items = await MenuItems.find().populate("category").lean();
 
-  return (
-    <MenuClient
-      categories={JSON.parse(JSON.stringify(categories))}
-      items={JSON.parse(JSON.stringify(items))}
-    />
-  );
+  if (!categories.length) {
+    return <div className="p-6">No categories found.</div>;
+  }
+
+  const firstId = String(categories[0]._id);
+
+  redirect(`/menu/${firstId}`);
 }

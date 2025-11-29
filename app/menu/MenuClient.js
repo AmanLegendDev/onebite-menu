@@ -6,7 +6,7 @@ import { useCart } from "@/app/context/CartContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-export default function MenuClient({ categories, items }) {
+export default function MenuClient({ categories, items, activeCategoryId }) {
   const router = useRouter();
   const { cart, addToCart, increaseQty, decreaseQty } = useCart();
 
@@ -14,13 +14,19 @@ export default function MenuClient({ categories, items }) {
   const [liveCategories, setLiveCategories] = useState(categories);
   const [liveItems, setLiveItems] = useState(items);
 
-  const [activeCat, setActiveCat] = useState(categories[0]?._id);
+
   const [selected, setSelected] = useState({});
   const [recentOrder, setRecentOrder] = useState(null);
 
+  // If prop change (different URL), update state
+ const activeCat = activeCategoryId || categories[0]?._id;
+
+
   // Load recent order
   useEffect(() => {
-    const saved = localStorage.getItem("latestOrder");
+    const saved = typeof window !== "undefined"
+      ? localStorage.getItem("latestOrder")
+      : null;
     if (saved) setRecentOrder(JSON.parse(saved));
   }, []);
 
@@ -35,20 +41,18 @@ export default function MenuClient({ categories, items }) {
   // 🔥 REALTIME MENU RELOADING
   // -----------------------------
   useEffect(() => {
-    async function reloadMenu() {
-      try {
-        const resItems = await fetch("/api/items", { cache: "no-store" });
-        const freshItems = await resItems.json();
+ async function reloadMenu() {
+  try {
+    const resItems = await fetch("/api/items", { cache: "no-store" });
+    const freshItems = await resItems.json();
 
-        const resCat = await fetch("/api/categories", { cache: "no-store" });
-        const freshCats = await resCat.json();
+    setLiveItems(freshItems);
+    // ❌ Categories NOT reloaded
+  } catch (err) {
+    console.log("Realtime menu fetch error:", err);
+  }
+}
 
-        setLiveItems(freshItems);
-        setLiveCategories(freshCats);
-      } catch (err) {
-        console.log("Realtime menu fetch error:", err);
-      }
-    }
 
     reloadMenu(); // initial load
 
@@ -59,9 +63,13 @@ export default function MenuClient({ categories, items }) {
   const totalPrice = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
   const totalQty = cart.reduce((sum, i) => sum + i.qty, 0);
 
+  // 👉 Ab sirf ACTIVE category hi render karenge
+  const visibleCategories = liveCategories.filter(
+    (cat) => String(cat._id) === String(activeCat)
+  );
+
   return (
     <div className="min-h-screen bg-[#f8f8f8] px-5 py-8 pb-24">
-
       <h1 className="text-4xl font-extrabold text-[#111] mb-6">Menu</h1>
 
       {/* CATEGORY TABS */}
@@ -70,16 +78,13 @@ export default function MenuClient({ categories, items }) {
           <motion.button
             key={cat._id}
             onClick={() => {
-              setActiveCat(cat._id);
-              document.getElementById(`cat-${cat._id}`)?.scrollIntoView({
-                behavior: "smooth",
-                block: "nearest",
-              });
+              const id = String(cat._id);
+              router.push(`/menu/${id}`); // 🔥 scroll nahi, naya URL
             }}
             whileTap={{ scale: 0.9 }}
             className={`px-4 py-2 rounded-full text-sm font-medium transition 
             ${
-              activeCat === cat._id
+              String(activeCat) === String(cat._id)
                 ? "bg-[#ff6a3d] text-white shadow-md"
                 : "bg-white text-[#333] border border-gray-300"
             }`}
@@ -90,7 +95,7 @@ export default function MenuClient({ categories, items }) {
       </div>
 
       {recentOrder && (
-        <div className="w-full bg-white shadow-lg border-b px-5 py-3 flex justify-between items-center z-50">
+        <div className="w-full bg-white shadow-lg border-b px-5 py-3 flex justify-between items-center z-50 mt-3">
           <p className="font-semibold text-[#111]">
             Last order • Table {recentOrder.table}
           </p>
@@ -104,10 +109,11 @@ export default function MenuClient({ categories, items }) {
       )}
 
       <div className="mt-6 space-y-14">
-
-        {liveCategories.map((cat) => (
-          <section id={`cat-${cat._id}`} key={cat._id}>
-            <h2 className="text-3xl font-bold text-[#111] mb-5">{cat.name}</h2>
+        {visibleCategories.map((cat) => (
+          <section key={cat._id}>
+            <h2 className="text-3xl font-bold text-[#111] mb-5">
+              {cat.name}
+            </h2>
 
             <motion.div
               className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5"
@@ -135,7 +141,7 @@ export default function MenuClient({ categories, items }) {
                           alt={item.name}
                           width={500}
                           height={300}
-                          priority 
+                          priority
                           className="w-full h-full object-cover"
                         />
                       </div>
@@ -163,7 +169,9 @@ export default function MenuClient({ categories, items }) {
 
                           <button
                             onClick={() => {
-                              qty === 0 ? addToCart(item) : increaseQty(item._id);
+                              qty === 0
+                                ? addToCart(item)
+                                : increaseQty(item._id);
                             }}
                             className="bg-[#ff6a3d] text-white w-8 h-8 flex items-center justify-center rounded-full text-lg font-bold"
                           >
@@ -211,7 +219,6 @@ export default function MenuClient({ categories, items }) {
             </motion.div>
           </section>
         ))}
-
       </div>
 
       {totalQty > 0 && (
@@ -221,10 +228,9 @@ export default function MenuClient({ categories, items }) {
           </p>
           <button
             className="bg-[#ff6a3d] text-white px-6 py-2 rounded-full font-semibold"
-            onClick={() => 
-              {router.push("/order-review")
-                router.refresh
-              }}
+            onClick={() => {
+              router.push("/order-review");
+            }}
           >
             process
           </button>

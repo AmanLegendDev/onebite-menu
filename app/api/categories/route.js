@@ -23,7 +23,7 @@ export async function  POST(req){
 export async function GET(){
     try{
         await connectDB()
-        const catogry = await Category.find().sort({createdAt: -1})
+        const catogry = await Category.find().sort({name: 1})
         return NextResponse.json(catogry)
     }catch(err){
         return NextResponse.json({error: err.message},{status: 500})
