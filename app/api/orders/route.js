@@ -7,13 +7,18 @@ export const dynamic = "force-dynamic";
 export const revalidate = false;
 
 
-export async function GET() {
+export async function GET(req) {
   try {
     await connectDB();
 
-    const orders = await Orders.find()
-      .sort({ createdAt: -1 })
-      .lean();  // 🔥 SUPER IMPORTANT
+    const { searchParams } = new URL(req.url);
+    const latest = searchParams.get("latest");
+
+    let orders = await Orders.find().sort({ createdAt: -1 }).lean();
+
+    if (latest === "true") {
+      orders = orders.slice(0, 1);
+    }
 
     return NextResponse.json({ success: true, orders });
   } catch (err) {
@@ -21,6 +26,7 @@ export async function GET() {
     return NextResponse.json({ success: false, orders: [] });
   }
 }
+
 
 
 export async function POST(req) {

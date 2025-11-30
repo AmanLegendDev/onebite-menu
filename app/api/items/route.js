@@ -75,18 +75,22 @@ return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
 
-export async function GET() {
+export async function GET(req) {
   try {
     await connectDB();
 
+    const { searchParams } = new URL(req.url);
+
+    // FAST COUNT MODE
+    if (searchParams.get("count") === "true") {
+      const count = await MenuItems.countDocuments();
+      return NextResponse.json({ count });
+    }
+
+    // DEFAULT - fetch full items
     const items = await MenuItems.find()
       .populate("category")
       .lean();
-
-    // If no items or error → always return array
-    if (!Array.isArray(items)) {
-      return NextResponse.json([]);
-    }
 
     return NextResponse.json(items);
   } catch (err) {
@@ -94,4 +98,5 @@ export async function GET() {
     return NextResponse.json([], { status: 200 });
   }
 }
+
 

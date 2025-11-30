@@ -54,8 +54,8 @@ export default function HomePage() {
       </div>
 
       {/* FOOTER */}
-      <p className="mt-16 text-gray-600 text-sm">
-        Built with ❤️ by AmanLegendDev
+      <p className="mt-16 text-white font-bold text-sm">
+        Built with ❤️ by Aman
       </p>
     </div>
   );

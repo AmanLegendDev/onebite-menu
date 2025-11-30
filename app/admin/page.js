@@ -14,11 +14,12 @@ export default function AdminDashboard() {
     setCategories(Array.isArray(data) ? data : []);
   }
 
-  async function loadItems() {
-    const res = await fetch("/api/items");
-    const data = await res.json();
-    setItems(Array.isArray(data) ? data : []);
-  }
+ async function loadItems() {
+  const res = await fetch("/api/items?count=true");
+  const data = await res.json();
+  setItems(new Array(data.count));
+}
+
 
   async function loadOrders() {
     const res = await fetch("/api/orders");

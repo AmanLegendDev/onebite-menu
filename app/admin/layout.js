@@ -2,6 +2,7 @@
 import { useEffect } from "react";
 import { useState } from "react";
 import { redirect, usePathname } from "next/navigation";
+import AdminNotification from "@/app/component/AdminNotification";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import {
@@ -140,10 +141,12 @@ if (!session || session.user.role !== "admin") {
           {/* Email Desktop */}
           <p className="text-gray-400 text-sm hidden md:block">
             {session?.user?.email}
-          </p>
+          </p>  
         </div>
 
         {/* PAGE CONTENT */}
+       
+<AdminNotification />
         <main className="p-5">{children}</main>
       </div>
     </div>
