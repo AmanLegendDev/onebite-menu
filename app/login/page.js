@@ -10,29 +10,39 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   async function handleLogin(e) {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
+  e.preventDefault();
+  setError("");
+  setLoading(true);
 
-    const email = e.target.email.value;
-    const password = e.target.password.value;
+  // form values
+  const email = e.currentTarget.email.value.trim().toLowerCase();
+  const password = e.currentTarget.password.value;
 
-    const res = await signIn("credentials", {
-      redirect: false,
-      email,
-      password,
-    });
+  // 👉 yaha pe res chahiye, isko hataana nahi hai
+  const res = await signIn("credentials", {
+    redirect: false,   // hum khud redirect karenge
+    email,
+    password,
+  });
 
-    setLoading(false);
+  setLoading(false);
 
-    if (res?.error) {
-      setError(res.error);
-      return;
-    }
-
-    if (res.ok) router.push("/admin");
-
+  // agar res hi nahi mila (edge case)
+  if (!res) {
+    setError("Something went wrong. Please try again.");
+    return;
   }
+
+  // ❌ wrong email / password / unauthorized
+  if (res.error) {
+    setError(res.error);
+    return;
+  }
+
+  // ✅ success: ab hum khud admin pe bhejenge
+  router.replace("/admin");
+}
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0d0d0d] px-4">
