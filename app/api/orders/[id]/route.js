@@ -3,6 +3,35 @@ import { connectDB } from "@/lib/db";
 import Orders from "@/models/Orders";
 
 
+
+
+export async function GET(req, { params }) {
+  try {
+    await connectDB();
+
+    const order = await Orders.findById(params.id).lean();
+
+    if (!order) {
+      return NextResponse.json(
+        { success: false, message: "Order not found", order: null },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json(
+      { success: true, order },
+      { status: 200 }
+    );
+  } catch (err) {
+    console.log("GET Order Error:", err);
+    return NextResponse.json(
+      { success: false, order: null },
+      { status: 500 }
+    );
+  }
+}
+
+
 export async function PUT(req, { params }) {
   await connectDB();
   const body = await req.json();

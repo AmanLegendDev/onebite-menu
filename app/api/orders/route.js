@@ -7,6 +7,8 @@ export const dynamic = "force-dynamic";
 export const revalidate = false;
 
 
+
+
 export async function GET(req) {
   try {
     await connectDB();

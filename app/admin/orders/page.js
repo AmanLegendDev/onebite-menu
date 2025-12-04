@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -21,16 +22,26 @@ export default function AdminOrdersPage() {
     return () => clearInterval(interval);
   }, []);
 
-  async function loadOrders() {
-    try {
-      const res = await fetch("/api/orders", { cache: "no-store" });
-      const data = await res.json();
-      setOrders(data.orders || []);
-    } catch (err) {
-      console.log("Orders Fetch Error:", err);
+async function loadOrders() {
+  try {
+    const res = await fetch(
+      "/api/orders/paginated?page=1&limit=30",
+      { cache: "no-store" }
+    );
+
+    const data = await res.json();
+
+    // Agar API se data aaya → 50 orders set karo
+    if (data.orders && data.orders.length > 0) {
+      setOrders(data.orders);
     }
-    setLoading(false);
+  } catch (err) {
+    console.log("Orders Fetch Error:", err);
   }
+
+  setLoading(false);
+}
+
 
   // -----------------------------
   // DELETE ORDER
@@ -102,12 +113,8 @@ export default function AdminOrdersPage() {
           if (isNew) markSeen(o._id); // update DB
         }}
       >
-        {isNew && (
-          <span className="absolute bottom-3 right-4 bg-green-600 text-white text-xs px-2 py-1 rounded-full animate-pulse">
-            NEW
-          </span>
-        )}
-
+        
+         
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -123,13 +130,31 @@ export default function AdminOrdersPage() {
             {new Date(o.createdAt).toLocaleString()}
           </p>
 
+<div className="flex justify-between">
           <h2 className="text-xl font-bold mb-2 text-[#ff6a3d]">
             Table {o.table}
           </h2>
 
+          {isNew && (
+          <span className=" bg-green-600 text-center text-white text-xs px-2 py-2 rounded-full animate-pulse">
+            NEW
+          </span>
+        )}
+        </div>
+
           <p className="text-gray-300 mb-1">{o.totalQty} items</p>
           <p className="font-bold text-lg text-white">₹{o.totalPrice}</p>
         </div>
+        <button
+  onClick={(e) => {
+    e.stopPropagation();
+    window.location.href = `/admin/orders/bill/${o._id}`;
+  }}
+  className="absolute right-3 bottom-5 font-bold bg-[#ff6a3d] hover:bg-blue-700 text-white text-sm px-2 py-1 rounded"
+>
+  View Bill
+</button>
+
       </div>
     );
   }
@@ -206,6 +231,7 @@ export default function AdminOrdersPage() {
             <h2 className="text-2xl font-bold text-[#ff6a3d]">
               Table {selectedOrder.table}
             </h2>
+            
             <p className="text-gray-400 text-sm mb-4">
               {new Date(selectedOrder.createdAt).toLocaleString()}
             </p>
@@ -282,6 +308,16 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       )}
+      {/* HISTORY BUTTON */}
+<div className="mt-12 flex justify-center">
+  <Link
+    href="/admin/orders/history"
+    className="px-6 py-3 rounded-xl border border-gray-700 bg-[#111] hover:bg-[#1a1a1a] text-sm md:text-base font-semibold text-gray-200 hover:text-white flex items-center gap-2 transition"
+  >
+    View Full Order History →
+  </Link>
+</div>
+
     </div>
   );
 }
