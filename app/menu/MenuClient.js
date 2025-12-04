@@ -68,7 +68,7 @@ useEffect(() => {
   return (
     <div className="min-h-screen bg-[#f8f8f8] px-5 py-8 pb-24">
 
-      <h1 className="text-4xl font-extrabold text-[#111] mb-6">Menu</h1>
+      <h1 className="text-4xl font-extrabold text-[#111] mb-6">ONEBITE Menu</h1>
 
       {/* ---------------- CATEGORY TABS ---------------- */}
       <div
