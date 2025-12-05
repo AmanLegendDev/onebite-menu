@@ -2,9 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
-/* GLOBAL RESET / BASE STYLES */
+/* GLOBAL THEME COLORS */
+:root {
+  --onebite-primary: #ffb100;
+  --onebite-dark: #0d0d0d;
+  --onebite-card: #ffffff;
+  --onebite-text-dark: #111111;
+}
+
+/* BASE STYLES */
 html, body {
-  @apply bg-[#0d0d0d] text-white antialiased;
+  @apply bg-[var(--onebite-dark)] text-white antialiased;
+  font-family: 'Inter', sans-serif;
 }
 
 /* Smooth scroll */
@@ -16,13 +25,26 @@ html {
 body {
   font-size: 16px;
 }
-/* Hide scrollbar for Chrome, Safari, Edge */
+
+/* Remove scrollbar (clean UI) */
 .no-scrollbar::-webkit-scrollbar {
   display: none;
 }
-
-/* Hide scrollbar for Firefox */
 .no-scrollbar {
   scrollbar-width: none;
   -ms-overflow-style: none;
+}
+
+/* Card hover */
+.card-hover {
+  @apply transition-transform duration-300 hover:scale-[1.03];
+}
+
+/* Button styling */
+.btn-primary {
+  @apply bg-[var(--onebite-primary)] text-black font-semibold rounded-full px-6 py-3 shadow-lg active:scale-95 transition;
+}
+
+.btn-dark {
+  @apply bg-[#1a1a1a] text-white font-semibold rounded-full px-6 py-3 border border-gray-700 hover:border-[var(--onebite-primary)] active:scale-95 transition;
 }

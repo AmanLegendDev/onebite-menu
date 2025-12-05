@@ -21,29 +21,26 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
   const activeCat = activeCategoryId || categories[0]?._id;
 
   const getCategoryCount = (catId) => {
-  return cart
-    .filter((item) => 
-      String(item.category) === String(catId) ||
-      String(item.category?._id) === String(catId)
-    )
-    .reduce((sum, item) => sum + item.qty, 0);
-};
+    return cart
+      .filter(
+        (item) =>
+          String(item.category) === String(catId) ||
+          String(item.category?._id) === String(catId)
+      )
+      .reduce((sum, item) => sum + item.qty, 0);
+  };
 
-
-  // Load last order
   useEffect(() => {
     const saved = localStorage.getItem("latestOrder");
     if (saved) setRecentOrder(JSON.parse(saved));
   }, []);
 
-  // Sync cart qty with UI
   useEffect(() => {
     const updated = {};
     cart.forEach((item) => (updated[item._id] = item.qty));
     setSelected(updated);
   }, [cart]);
 
-  // No realtime — just initial items
   useEffect(() => {
     setLiveItems(items);
   }, [items]);
@@ -55,75 +52,78 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
     (cat) => String(cat._id) === String(activeCat)
   );
 
-
-  // restore scroll after mount
-useEffect(() => {
-  const saved = sessionStorage.getItem("tabsScroll");
-  if (saved && tabsRef.current) {
-    tabsRef.current.scrollLeft = Number(saved);
-  }
-}, [activeCategoryId]);
-
+  useEffect(() => {
+    const saved = sessionStorage.getItem("tabsScroll");
+    if (saved && tabsRef.current) {
+      tabsRef.current.scrollLeft = Number(saved);
+    }
+  }, [activeCategoryId]);
 
   return (
-    <div className="min-h-screen bg-[#f8f8f8] px-5 py-8 pb-24">
+    <div className="min-h-screen bg-[#0d0d0d] px-5 py-8 pb-28">
 
-      <h1 className="text-4xl font-extrabold text-[#111] mb-6">ONEBITE Menu</h1>
+      {/* HEADER */}
+      <h1 className="text-4xl font-extrabold text-yellow-400 mb-6 tracking-wide">
+        ONEBITE Menu 🍕
+      </h1>
 
-      {/* ---------------- CATEGORY TABS ---------------- */}
+      {/* CATEGORY TABS */}
       <div
         ref={tabsRef}
-        className="flex gap-3 overflow-x-auto no-scrollbar pb-4 sticky top-0 bg-[#f8f8f8] z-10 pt-2"
+        className="flex gap-3 overflow-x-auto no-scrollbar pb-4 sticky top-0 bg-[#0d0d0d] z-10 pt-2"
       >
         {liveCategories.map((cat) => (
           <motion.button
             key={cat._id}
-           onClick={() => {
-  const savedScroll = tabsRef.current?.scrollLeft || 0;
-  sessionStorage.setItem("tabsScroll", savedScroll);
+            onClick={() => {
+              const savedScroll = tabsRef.current?.scrollLeft || 0;
+              sessionStorage.setItem("tabsScroll", savedScroll);
 
-  router.push(`/menu/${String(cat._id)}`);
-}}
-
+              router.push(`/menu/${String(cat._id)}`);
+            }}
             whileTap={{ scale: 0.9 }}
-            className={`px-4 py-2 rounded-full text-sm font-medium transition
+            className={`px-5 py-2 rounded-full text-sm font-semibold transition-all
               ${
                 String(activeCat) === String(cat._id)
-                  ? "bg-[#ff6a3d] text-white shadow-md"
-                  : "bg-white text-[#333] border border-gray-300"
+                  ? "bg-yellow-400 text-black shadow-lg"
+                  : "bg-[#1a1a1a] text-gray-300 border border-gray-600 hover:border-yellow-400"
               }`}
           >
-            {cat.name} {getCategoryCount(cat._id) > 0 && `(${getCategoryCount(cat._id)})`}
+            {cat.name}
+            {getCategoryCount(cat._id) > 0 && (
+              <span className="ml-1 text-xs">({getCategoryCount(cat._id)})</span>
+            )}
           </motion.button>
         ))}
       </div>
 
-      {/* ---------------- LAST ORDER ---------------- */}
+      {/* LAST ORDER */}
       {recentOrder && (
-        <div className="w-full bg-white shadow-lg border-b px-5 py-3 flex justify-between items-center mt-3">
-          <p className="font-semibold text-[#111]">
+        <div className="w-full bg-[#1a1a1a] rounded-lg shadow-lg border border-yellow-400 px-5 py-3 flex justify-between items-center mt-4">
+          <p className="font-semibold text-yellow-300">
             Last order • Table {recentOrder.table}
           </p>
           <button
             onClick={() => router.push("/order-success")}
-            className="bg-[#ff6a3d] text-white px-4 py-2 rounded-full text-sm font-semibold"
+            className="bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-semibold"
           >
             View
           </button>
         </div>
       )}
 
-      {/* ---------------- ITEMS GRID ---------------- */}
-      <div className="mt-6 space-y-14">
+      {/* ITEMS GRID */}
+      <div className="mt-8 space-y-16">
         {visibleCategories.map((cat) => (
           <section key={cat._id}>
-            <h2 className="text-3xl font-bold text-[#111] mb-5">
-              {cat.name} {getCategoryCount(cat._id) > 0 && `(${getCategoryCount(cat._id)})`}
-
+            <h2 className="text-3xl font-bold text-white mb-4 tracking-wide">
+              {cat.name}{" "}
+              {getCategoryCount(cat._id) > 0 &&
+                `(${getCategoryCount(cat._id)})`}
             </h2>
 
             <motion.div
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-5"
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"
               initial={{ opacity: 0 }}
               whileInView={{ opacity: 1 }}
               transition={{ duration: 0.4 }}
@@ -144,9 +144,10 @@ useEffect(() => {
                     <motion.div
                       key={item._id}
                       whileHover={{ scale: 1.03 }}
-                      className="bg-white rounded-xl shadow-md border border-gray-200 overflow-hidden flex flex-col"
+                      className="bg-[#1a1a1a] rounded-xl shadow-lg border border-gray-700 hover:border-yellow-400 overflow-hidden flex flex-col"
                     >
-                      <div className="h-36 w-full overflow-hidden rounded-t-xl">
+                      {/* IMAGE */}
+                      <div className="h-40 w-full overflow-hidden">
                         <Image
                           src={item.image}
                           alt={item.name}
@@ -157,25 +158,25 @@ useEffect(() => {
                         />
                       </div>
 
-                      <div className="p-3 flex flex-col flex-grow">
-                        <h3 className="text-lg font-semibold text-[#111] line-clamp-2 min-h-[48px]">
+                      <div className="p-4 flex flex-col flex-grow">
+                        <h3 className="text-lg font-bold text-white line-clamp-2 min-h-[48px]">
                           {item.name}
                         </h3>
 
-                        <p className="text-gray-500 text-sm mt-1 line-clamp-2 min-h-[40px]">
+                        <p className="text-gray-400 text-sm mt-1 min-h-[40px] line-clamp-2">
                           {item.description}
                         </p>
 
-                        {/* Quantity Control */}
-                        <div className="flex items-center justify-center gap-3 mt-4">
+                        {/* QTY CONTROL */}
+                        <div className="flex items-center justify-center gap-4 mt-4">
                           <button
                             onClick={() => decreaseQty(item._id)}
-                            className="bg-gray-200 text-[#111] w-8 h-8 flex items-center justify-center rounded-full text-lg font-bold"
+                            className="bg-[#333] text-white w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold hover:bg-[#444]"
                           >
                             -
                           </button>
 
-                          <span className="text-lg font-semibold w-6 text-center text-black">
+                          <span className="text-lg font-semibold text-yellow-400 w-6 text-center">
                             {qty}
                           </span>
 
@@ -183,19 +184,20 @@ useEffect(() => {
                             onClick={() => {
                               qty === 0 ? addToCart(item) : increaseQty(item._id);
                             }}
-                            className="bg-[#ff6a3d] text-white w-8 h-8 flex items-center justify-center rounded-full text-lg font-bold"
+                            className="bg-yellow-400 text-black w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold"
                           >
                             +
                           </button>
                         </div>
 
+                        {/* PRICE + SELECT BUTTON */}
                         <div className="flex items-center justify-between mt-4">
-                          <p className="text-[#ff6a3d] font-bold text-lg">
+                          <p className="text-yellow-400 font-bold text-lg">
                             ₹{item.price}
                           </p>
 
                           {isSelected ? (
-                            <button className="px-4 py-1.5 rounded-full text-xs font-semibold bg-green-500 text-white">
+                            <button className="px-4 py-1.5 rounded-full text-xs font-semibold bg-green-500 text-black">
                               Selected ({selected[item._id]})
                             </button>
                           ) : (
@@ -214,8 +216,8 @@ useEffect(() => {
                               className={`px-4 py-1.5 rounded-full text-xs font-semibold 
                                 ${
                                   qty < 1
-                                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                                    : "bg-[#ff6a3d] text-white"
+                                    ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                                    : "bg-yellow-400 text-black"
                                 }`}
                             >
                               Select
@@ -231,17 +233,17 @@ useEffect(() => {
         ))}
       </div>
 
-      {/* ---------------- CART FOOTER ---------------- */}
+      {/* CART FOOTER */}
       {totalQty > 0 && (
-        <div className="fixed bottom-0 left-0 w-full bg-white shadow-lg border-t px-5 py-3 flex justify-between items-center z-50">
-          <p className="font-semibold text-[#111]">
+        <div className="fixed bottom-0 left-0 w-full bg-[#1a1a1a] border-t border-yellow-400 shadow-xl px-5 py-4 flex justify-between items-center z-50">
+          <p className="font-semibold text-yellow-300 text-lg">
             {totalQty} items • ₹{totalPrice}
           </p>
           <button
             onClick={() => router.push("/order-review")}
-            className="bg-[#ff6a3d] text-white px-6 py-2 rounded-full font-semibold"
+            className="bg-yellow-400 text-black px-6 py-2 rounded-full font-bold hover:bg-yellow-300 transition"
           >
-            process
+            Proceed →
           </button>
         </div>
       )}

@@ -1,6 +1,5 @@
 "use client";
 import { motion } from "framer-motion";
-
 import { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
 
@@ -9,12 +8,8 @@ export default function OrderSuccessPage() {
   const [order, setOrder] = useState(null);
 
   useEffect(() => {
-    // Jis order ko humne place kiya, use localStorage mein save kar rahe the
     const savedOrder = localStorage.getItem("latestOrder");
-
-    if (savedOrder) {
-      setOrder(JSON.parse(savedOrder));
-    }
+    if (savedOrder) setOrder(JSON.parse(savedOrder));
   }, []);
 
   if (!order) {
@@ -26,98 +21,91 @@ export default function OrderSuccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f8f8f8] px-6 py-10 text-black">
+    <div className="min-h-screen bg-[#0d0d0d] px-6 py-10 text-white">
 
-      {/* Success Badge */}
+      {/* LOGO */}
+      <div className="flex justify-center mb-6">
+        <img
+          src="/onebite-2.jpg"
+          className="w-28 h-28 object-cover rounded-full shadow-xl border border-[#FFB100]"
+        />
+      </div>
+
+      {/* SUCCESS BADGE */}
       <div className="text-center">
         <motion.div
-  initial={{ scale: 0, rotate: -180, opacity: 0 }}
-  animate={{ scale: 1, rotate: 0, opacity: 1 }}
-  transition={{
-    duration: 0.8,
-    ease: "backOut"
-  }}
-  whileHover={{
-    scale: 1.1,
-    boxShadow: "0 0 15px rgba(34,197,94,0.6)",
-    transition: { duration: 0.3 }
-  }}
-  className="w-20 h-20 bg-green-500 text-white rounded-full flex items-center justify-center mx-auto text-4xl font-bold shadow-lg"
->
-  <motion.span
-    animate={{ rotate: [0, 20, -20, 0] }}
-    transition={{
-      duration: 1.5,
-      repeat: Infinity,
-      ease: "easeInOut"
-    }}
-  >
-    ✓
-  </motion.span>
-</motion.div>
+          initial={{ scale: 0, rotate: -180, opacity: 0 }}
+          animate={{ scale: 1, rotate: 0, opacity: 1 }}
+          transition={{ duration: 0.8, ease: "backOut" }}
+          className="w-24 h-24 bg-[#22C55E] text-white rounded-full flex items-center justify-center mx-auto text-5xl font-bold shadow-[0_0_20px_rgba(34,197,94,0.5)]"
+        >
+          ✓
+        </motion.div>
 
-
-        <h1 className="text-3xl font-bold mt-4">Order Placed!</h1>
-        <p className="text-gray-600 mt-2">
-          Your order has been successfully sent to the kitchen.
+        <h1 className="text-4xl font-extrabold mt-5 tracking-wide">
+          Order Placed!
+        </h1>
+        <p className="text-gray-400 mt-2 text-sm">
+          Your delicious OneBite meal is being prepared 😋🔥
         </p>
       </div>
 
-      {/* ORDER DETAILS BOX */}
-      <div className="bg-white rounded-xl shadow p-5 mt-8">
+      {/* SUMMARY CARD */}
+      <div className="bg-[#111] rounded-2xl shadow-lg p-6 mt-10 border border-[#222]">
+        <h2 className="text-xl font-bold mb-5 text-[#FFB100]">
+          Order Summary
+        </h2>
 
-        <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-
-        {/* ITEMS LIST */}
         <div className="space-y-4">
           {order.items.map((item) => (
-            <div key={item._id} className="flex items-center justify-between">
+            <div
+              key={item._id}
+              className="flex items-center justify-between bg-[#1a1a1a] p-3 rounded-xl shadow-sm border border-[#333]"
+            >
               <div>
-                <p className="font-medium text-[#111]">{item.name}</p>
-                <p className="text-sm text-gray-500">
+                <p className="font-semibold">{item.name}</p>
+                <p className="text-sm text-gray-400">
                   {item.qty} × ₹{item.price}
                 </p>
               </div>
 
-              <p className="font-semibold text-[#ff6a3d]">
+              <p className="font-bold text-[#FF6A3D]">
                 ₹{item.qty * item.price}
               </p>
             </div>
           ))}
         </div>
 
-        <hr className="my-4" />
+        <hr className="border-gray-700 my-5" />
 
         {/* TOTAL */}
-        <div className="flex justify-between text-lg font-bold">
+        <div className="flex justify-between text-lg font-extrabold">
           <p>Total Bill</p>
-          <p>₹{order.totalPrice}</p>
+          <p className="text-[#FFB100]">₹{order.totalPrice}</p>
         </div>
 
-        {/* TABLE NUMBER */}
-        <div className="mt-4 bg-gray-300 p-3 rounded-lg text-center">
-          <p className="font-semibold text-black">
-            Table Number: <span className="text-[#c9512d] font-bold text-xl">{order.table}</span>
-          </p>
+        {/* TABLE */}
+        <div className="mt-6 bg-[#FFB100] text-black p-3 rounded-lg text-center font-extrabold text-lg tracking-wide shadow-md">
+          Table No: {order.table}
         </div>
 
         {/* TIME */}
-        <p className="text-center text-sm text-gray-500 mt-3">
+        <p className="text-center text-gray-400 text-xs mt-4">
           {new Date(order.createdAt).toLocaleString()}
         </p>
       </div>
 
       {/* BUTTON */}
-      <div className="mt-10 text-center">
-       <button
-  onClick={() => {
-    clearCart();                 // 🔥 LOCALSTORAGE + STATE dono reset
-    window.location.href = "/menu";
-  }}
-  className="bg-[#e05023] text-white px-8 py-3 rounded-full text-lg font-semibold"
->
-  Back to Menu
-</button>
+      <div className="mt-12 text-center">
+        <button
+          onClick={() => {
+            clearCart();
+            window.location.href = "/menu";
+          }}
+          className="bg-[#FF6A3D] hover:bg-[#ff7c50] px-10 py-3 rounded-full text-lg font-bold shadow-lg active:scale-95 transition border border-[#FFB100]"
+        >
+          Back to Menu
+        </button>
       </div>
     </div>
   );
