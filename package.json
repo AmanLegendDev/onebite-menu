@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "create-admin": "node scripts/createAdmin.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -17,7 +18,9 @@
   "dependencies": {
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.8.0",
+    "dotenv": "^17.2.3",
     "framer-motion": "^12.23.24",
+    "i": "^0.3.7",
     "lucide-react": "^0.554.0",
     "mongodb": "^7.0.0",
     "mongoose": "^9.0.0",
