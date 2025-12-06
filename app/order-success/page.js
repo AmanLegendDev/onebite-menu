@@ -1,4 +1,5 @@
 "use client";
+
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useCart } from "../context/CartContext";
@@ -14,7 +15,7 @@ export default function OrderSuccessPage() {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-xl font-semibold">
+      <div className="min-h-screen flex items-center justify-center text-xl font-semibold text-white bg-[#0d0d0d]">
         Loading your order...
       </div>
     );
@@ -24,35 +25,45 @@ export default function OrderSuccessPage() {
     <div className="min-h-screen bg-[#0d0d0d] px-6 py-10 text-white">
 
       {/* LOGO */}
-      <div className="flex justify-center mb-6">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="flex justify-center"
+      >
         <img
           src="/onebite-2.jpg"
-          className="w-28 h-28 object-cover rounded-full shadow-xl border border-[#FFB100]"
+          className="w-32 h-32 object-cover rounded-full shadow-[0_0_25px_rgba(255,177,0,0.5)] border-2 border-[#FFB100]"
         />
-      </div>
+      </motion.div>
 
       {/* SUCCESS BADGE */}
-      <div className="text-center">
+      <div className="text-center mt-6">
         <motion.div
           initial={{ scale: 0, rotate: -180, opacity: 0 }}
           animate={{ scale: 1, rotate: 0, opacity: 1 }}
-          transition={{ duration: 0.8, ease: "backOut" }}
-          className="w-24 h-24 bg-[#22C55E] text-white rounded-full flex items-center justify-center mx-auto text-5xl font-bold shadow-[0_0_20px_rgba(34,197,94,0.5)]"
+          transition={{ duration: 0.7, type: "spring" }}
+          className="w-28 h-28 bg-[#22C55E] text-white rounded-full flex items-center justify-center mx-auto text-6xl font-bold shadow-[0_0_25px_rgba(34,197,94,0.6)]"
         >
           ✓
         </motion.div>
 
-        <h1 className="text-4xl font-extrabold mt-5 tracking-wide">
-          Order Placed!
+        <h1 className="text-4xl font-extrabold mt-6 tracking-wide text-yellow-400">
+          Order Confirmed!
         </h1>
         <p className="text-gray-400 mt-2 text-sm">
-          Your delicious OneBite meal is being prepared 😋🔥
+          We’re preparing your order… sit back & relax 😋🔥
         </p>
       </div>
 
       {/* SUMMARY CARD */}
-      <div className="bg-[#111] rounded-2xl shadow-lg p-6 mt-10 border border-[#222]">
-        <h2 className="text-xl font-bold mb-5 text-[#FFB100]">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="bg-[#111] rounded-2xl shadow-xl p-6 mt-10 border border-[#222]"
+      >
+        <h2 className="text-xl font-bold mb-5 text-yellow-400">
           Order Summary
         </h2>
 
@@ -60,7 +71,7 @@ export default function OrderSuccessPage() {
           {order.items.map((item) => (
             <div
               key={item._id}
-              className="flex items-center justify-between bg-[#1a1a1a] p-3 rounded-xl shadow-sm border border-[#333]"
+              className="flex items-center justify-between bg-[#1a1a1a] p-4 rounded-xl border border-[#333] shadow-md"
             >
               <div>
                 <p className="font-semibold">{item.name}</p>
@@ -69,49 +80,48 @@ export default function OrderSuccessPage() {
                 </p>
               </div>
 
-              <p className="font-bold text-[#FF6A3D]">
+              <p className="font-extrabold text-[#FF6A3D]">
                 ₹{item.qty * item.price}
               </p>
             </div>
           ))}
         </div>
 
-        <hr className="border-gray-700 my-5" />
+        <div className="border-t border-gray-700 my-5"></div>
 
         {/* TOTAL */}
-        <div className="flex justify-between text-lg font-extrabold">
+        <div className="flex justify-between text-lg font-bold">
           <p>Total Bill</p>
-          <p className="text-[#FFB100]">₹{order.totalPrice}</p>
+          <p className="text-yellow-400">₹{order.totalPrice}</p>
         </div>
 
         {/* TABLE */}
-        <div className="mt-6 bg-[#FFB100] text-black p-3 rounded-lg text-center font-extrabold text-lg tracking-wide shadow-md">
-          Table No: {order.table}
+        <div className="mt-6 bg-yellow-400 text-black p-3 rounded-lg text-center font-extrabold text-lg shadow-md">
+          Table: {order.table}
         </div>
 
         {/* TIME */}
         <p className="text-center text-gray-400 text-xs mt-4">
           {new Date(order.createdAt).toLocaleString()}
         </p>
-                <button
-                onClick={(e) => {
-                e.stopPropagation();
-                window.location.href = `/bill/${order._id}`;
-                               }}
-                     className=" font-bold bg-[#ff6a3d] hover:bg-blue-700 text-white text-sm px-2 py-1 rounded"
-           >
-               View Bill
-                </button>
-      </div>
 
-      {/* BUTTON */}
+        {/* VIEW BILL BUTTON */}
+        <button
+          onClick={() => (window.location.href = `/bill/${order._id}`)}
+          className="mt-6 w-full bg-[#FF6A3D] hover:bg-[#ff7c50] text-white py-3 rounded-lg font-bold text-sm shadow-lg active:scale-95 transition"
+        >
+          View Detailed Bill →
+        </button>
+      </motion.div>
+
+      {/* BACK TO MENU */}
       <div className="mt-12 text-center">
         <button
           onClick={() => {
             clearCart();
             window.location.href = "/menu";
           }}
-          className="bg-[#FF6A3D] hover:bg-[#ff7c50] px-10 py-3 rounded-full text-lg font-bold shadow-lg active:scale-95 transition border border-[#FFB100]"
+          className="bg-yellow-400 hover:bg-yellow-300 px-10 py-3 rounded-full text-lg font-bold text-black shadow-[0_0_20px_rgba(255,177,0,0.4)] active:scale-95 transition"
         >
           Back to Menu
         </button>

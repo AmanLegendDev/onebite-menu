@@ -14,14 +14,13 @@ const [tableInfo, setTableInfo] = useState(null);
 
 useEffect(() => {
   async function fetchTable() {
-    const res = await fetch(`/api/table/${tableId}`);
+    const res = await fetch(`/api/tables/${tableId}`);
     const data = await res.json();
-    if (data.success) {
-      setTableInfo(data.table);
-    }
+    if (data.success) setTableInfo(data.table);
   }
   fetchTable();
 }, [tableId]);
+
 
 
   useEffect(() => {
@@ -63,7 +62,7 @@ useEffect(() => {
 
     localStorage.setItem("onebite_user", JSON.stringify(userData));
 
-    router.push(`/table/${tableId}/menu`);
+    router.push(`/tables/${tableId}/menu`);
   }
 
   return (

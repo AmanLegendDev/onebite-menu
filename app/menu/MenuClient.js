@@ -6,7 +6,12 @@ import { useCart } from "@/app/context/CartContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-export default function MenuClient({ categories, items, activeCategoryId, tableInfo }) {
+export default function MenuClient({
+  categories,
+  items,
+  activeCategoryId,
+  tableInfo,
+}) {
   const router = useRouter();
   const tabsRef = useRef(null);
 
@@ -17,15 +22,14 @@ export default function MenuClient({ categories, items, activeCategoryId, tableI
 
   const [selected, setSelected] = useState({});
   const [recentOrder, setRecentOrder] = useState(null);
-
   const [customer, setCustomer] = useState(null);
 
-useEffect(() => {
-  if (typeof window === "undefined") return;
-  const saved = localStorage.getItem("onebite_user");
-  if (saved) setCustomer(JSON.parse(saved));
-}, []);
-
+  // Load customer (name + phone) from localStorage
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const saved = localStorage.getItem("onebite_user");
+    if (saved) setCustomer(JSON.parse(saved));
+  }, []);
 
   const activeCat = activeCategoryId || categories[0]?._id;
 
@@ -39,8 +43,7 @@ useEffect(() => {
       .reduce((sum, item) => sum + item.qty, 0);
   };
 
-
-    // Save table info when QR menu is opened
+  // Save table info when QR menu is opened
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -54,7 +57,6 @@ useEffect(() => {
       sessionStorage.setItem("tableInfo", JSON.stringify(safe));
     }
   }, [tableInfo]);
-
 
   useEffect(() => {
     const saved = localStorage.getItem("latestOrder");
@@ -85,195 +87,266 @@ useEffect(() => {
     }
   }, [activeCategoryId]);
 
+  const tableLabel =
+    tableInfo?.name ||
+    (tableInfo?.number ? `Table ${tableInfo.number}` : null) ||
+    (recentOrder?.tableName || recentOrder?.table || null);
+
   return (
-    <div className="min-h-screen bg-[#0d0d0d] px-5 py-8 pb-28">
+    <div className="min-h-screen bg-[#050505] text-white pb-28">
+      {/* TOP GRADIENT + HEADER + TABS */}
+      <div className="sticky top-0 z-20 bg-gradient-to-b from-[#050505] via-[#050505] to-[#050505]/95 backdrop-blur-md border-b border-yellow-500/10 px-5 pt-4 pb-3">
+        {/* HEADER BAR */}
+        <div className="flex items-center gap-3 sm:gap-4">
+          {/* Logo */}
+          <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-full overflow-hidden border border-yellow-400/80 shadow-[0_0_20px_rgba(248,197,55,0.4)] bg-black">
+            <Image
+              src="/onebite-2.jpg"
+              alt="OneBite Logo"
+              fill
+              className="object-cover"
+              sizes="56px"
+            />
+          </div>
 
-      {/* HEADER */}
-      <h1 className="text-4xl font-extrabold text-yellow-400 mb-6 tracking-wide">
-        ONEBITE Menu 🍕
-      </h1>
-      {customer && (
-  <p className="text-gray-300 text-sm mb-4">
-    👤 {customer.name} • 📱 {customer.phone}
-  </p>
-)}
+          {/* Title + Info */}
+          <div className="flex-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+              <span className="text-yellow-400">ONEBITE</span>{" "}
+              <span className="text-white">Menu</span> <span>🍕</span>
+            </h1>
 
+            {/* Customer + table line */}
+            {(customer || tableLabel) && (
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-gray-300">
+                {customer && (
+                  <>
+                    <span className="inline-flex items-center gap-1">
+                      <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-[#151515] text-[10px]">
+                        👤
+                      </span>
+                      <span className="font-medium">{customer.name}</span>
+                    </span>
+                    <span className="h-1 w-1 rounded-full bg-gray-500" />
+                    <span className="font-mono text-gray-400">
+                      📱 {customer.phone}
+                    </span>
+                  </>
+                )}
 
-      {/* CATEGORY TABS */}
-      <div
-        ref={tabsRef}
-        className="flex gap-3 overflow-x-auto no-scrollbar pb-4 sticky top-0 bg-[#0d0d0d] z-10 pt-2"
-      >
-        {liveCategories.map((cat) => (
-          <motion.button
-            key={cat._id}
-            onClick={() => {
-              const savedScroll = tabsRef.current?.scrollLeft || 0;
-              sessionStorage.setItem("tabsScroll", savedScroll);
-
-              router.push(`/menu/${String(cat._id)}`);
-            }}
-            whileTap={{ scale: 0.9 }}
-            className={`px-5 py-2 rounded-full text-sm font-semibold transition-all
-              ${
-                String(activeCat) === String(cat._id)
-                  ? "bg-yellow-400 text-black shadow-lg"
-                  : "bg-[#1a1a1a] text-gray-300 border border-gray-600 hover:border-yellow-400"
-              }`}
-          >
-            {cat.name}
-            {getCategoryCount(cat._id) > 0 && (
-              <span className="ml-1 text-xs">({getCategoryCount(cat._id)})</span>
+                {tableLabel && (
+                  <>
+                    {customer && (
+                      <span className="h-1 w-1 rounded-full bg-gray-500" />
+                    )}
+                    <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/70 bg-yellow-400/10 px-3 py-1 font-semibold text-[11px] text-yellow-300">
+                      🪑 {tableLabel}
+                    </span>
+                  </>
+                )}
+              </div>
             )}
-          </motion.button>
-        ))}
+          </div>
+        </div>
+
+        {/* CATEGORY TABS */}
+        <div
+          ref={tabsRef}
+          className="mt-4 flex gap-3 overflow-x-auto no-scrollbar pb-1"
+        >
+          {liveCategories.map((cat) => {
+            const isActive = String(activeCat) === String(cat._id);
+            const count = getCategoryCount(cat._id);
+
+            return (
+              <motion.button
+                key={cat._id}
+                onClick={() => {
+                  const savedScroll = tabsRef.current?.scrollLeft || 0;
+                  sessionStorage.setItem("tabsScroll", savedScroll);
+
+                  router.push(`/menu/${String(cat._id)}`);
+                }}
+                whileTap={{ scale: 0.9 }}
+                className={`whitespace-nowrap px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all border backdrop-blur
+                  ${
+                    isActive
+                      ? "bg-yellow-400 text-black border-yellow-400 shadow-[0_0_18px_rgba(248,197,55,0.7)]"
+                      : "bg-[#111111] text-gray-200 border-[#333333] hover:border-yellow-400/70 hover:text-yellow-200"
+                  }`}
+              >
+                {cat.name}
+                {count > 0 && (
+                  <span className="ml-1 text-[11px] sm:text-xs opacity-90">
+                    ({count})
+                  </span>
+                )}
+              </motion.button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* LAST ORDER */}
-      {recentOrder && (
-        <div className="w-full bg-[#1a1a1a] rounded-lg shadow-lg border border-yellow-400 px-5 py-3 flex justify-between items-center mt-4">
-          <p className="font-semibold text-yellow-300">
-            Last order • Table {recentOrder.table}
-          </p>
-          <button
-            onClick={() => router.push("/order-success")}
-            className="bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-semibold"
-          >
-            View
-          </button>
-        </div>
-      )}
+      <div className="px-5 pt-4">
+        {/* LAST ORDER BANNER */}
+        {recentOrder && (
+          <div className="w-full bg-[#111111] rounded-2xl shadow-lg border border-yellow-500/40 px-5 py-3 flex justify-between items-center mt-2">
+            <div>
+              <p className="font-semibold text-yellow-300 text-sm sm:text-base">
+                Last order •{" "}
+                {recentOrder.tableName || recentOrder.table || "Table"}
+              </p>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                Tap to view your previous bill
+              </p>
+            </div>
 
-      {/* ITEMS GRID */}
-      <div className="mt-8 space-y-16">
-        {visibleCategories.map((cat) => (
-          <section key={cat._id}>
-            <h2 className="text-3xl font-bold text-white mb-4 tracking-wide">
-              {cat.name}{" "}
-              {getCategoryCount(cat._id) > 0 &&
-                `(${getCategoryCount(cat._id)})`}
-            </h2>
-
-            <motion.div
-              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.4 }}
-              viewport={{ once: true }}
+            <button
+              onClick={() => router.push("/order-success")}
+              className="bg-yellow-400 text-black px-4 py-2 rounded-full text-xs sm:text-sm font-semibold hover:bg-yellow-300 transition shadow-md"
             >
-              {liveItems
-                .filter(
-                  (item) =>
-                    String(item.category) === String(cat._id) ||
-                    String(item.category?._id) === String(cat._id)
-                )
-                .map((item) => {
-                  const inCart = cart.find((c) => c._id === item._id);
-                  const qty = inCart?.qty ?? 0;
-                  const isSelected = selected[item._id] > 0;
+              View
+            </button>
+          </div>
+        )}
 
-                  return (
-                    <motion.div
-                      key={item._id}
-                      whileHover={{ scale: 1.03 }}
-                      className="bg-[#1a1a1a] rounded-xl shadow-lg border border-gray-700 hover:border-yellow-400 overflow-hidden flex flex-col"
-                    >
-                      {/* IMAGE */}
-                      <div className="h-40 w-full overflow-hidden">
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          width={500}
-                          height={300}
-                          priority
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
+        {/* ITEMS GRID */}
+        <div className="mt-8 space-y-16">
+          {visibleCategories.map((cat) => (
+            <section key={cat._id}>
+              <div className="flex items-baseline justify-between gap-2 mb-4">
+                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-wide">
+                  {cat.name}{" "}
+                  {getCategoryCount(cat._id) > 0 &&
+                    `(${getCategoryCount(cat._id)})`}
+                </h2>
+              </div>
 
-                      <div className="p-4 flex flex-col flex-grow">
-                        <h3 className="text-lg font-bold text-white line-clamp-2 min-h-[48px]">
-                          {item.name}
-                        </h3>
+              <motion.div
+                className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ duration: 0.35 }}
+                viewport={{ once: true }}
+              >
+                {liveItems
+                  .filter(
+                    (item) =>
+                      String(item.category) === String(cat._id) ||
+                      String(item.category?._id) === String(cat._id)
+                  )
+                  .map((item) => {
+                    const inCart = cart.find((c) => c._id === item._id);
+                    const qty = inCart?.qty ?? 0;
+                    const isSelected = selected[item._id] > 0;
 
-                        <p className="text-gray-400 text-sm mt-1 min-h-[40px] line-clamp-2">
-                          {item.description}
-                        </p>
-
-                        {/* QTY CONTROL */}
-                        <div className="flex items-center justify-center gap-4 mt-4">
-                          <button
-                            onClick={() => decreaseQty(item._id)}
-                            className="bg-[#333] text-white w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold hover:bg-[#444]"
-                          >
-                            -
-                          </button>
-
-                          <span className="text-lg font-semibold text-yellow-400 w-6 text-center">
-                            {qty}
-                          </span>
-
-                          <button
-                            onClick={() => {
-                              qty === 0 ? addToCart(item) : increaseQty(item._id);
-                            }}
-                            className="bg-yellow-400 text-black w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold"
-                          >
-                            +
-                          </button>
+                    return (
+                      <motion.div
+                        key={item._id}
+                        whileHover={{ scale: 1.03 }}
+                        className="bg-[#111111] rounded-2xl shadow-lg border border-[#333333] hover:border-yellow-400/80 overflow-hidden flex flex-col"
+                      >
+                        {/* IMAGE */}
+                        <div className="h-40 w-full overflow-hidden">
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            width={500}
+                            height={300}
+                            priority
+                            className="w-full h-full object-cover"
+                          />
                         </div>
 
-                        {/* PRICE + SELECT BUTTON */}
-                        <div className="flex items-center justify-between mt-4">
-                          <p className="text-yellow-400 font-bold text-lg">
-                            ₹{item.price}
+                        <div className="p-4 flex flex-col flex-grow">
+                          <h3 className="text-base sm:text-lg font-bold text-white line-clamp-2 min-h-[44px]">
+                            {item.name}
+                          </h3>
+
+                          <p className="text-gray-400 text-xs sm:text-sm mt-1 min-h-[38px] line-clamp-2">
+                            {item.description}
                           </p>
 
-                          {isSelected ? (
-                            <button className="px-4 py-1.5 rounded-full text-xs font-semibold bg-green-500 text-black">
-                              Selected ({selected[item._id]})
-                            </button>
-                          ) : (
-                            <motion.button
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => {
-                                if (qty < 1) {
-                                  alert("Please select at least 1 quantity.");
-                                  return;
-                                }
-                                setSelected((prev) => ({
-                                  ...prev,
-                                  [item._id]: qty,
-                                }));
-                              }}
-                              className={`px-4 py-1.5 rounded-full text-xs font-semibold 
-                                ${
-                                  qty < 1
-                                    ? "bg-gray-600 text-gray-400 cursor-not-allowed"
-                                    : "bg-yellow-400 text-black"
-                                }`}
+                          {/* QTY CONTROL */}
+                          <div className="flex items-center justify-center gap-4 mt-4">
+                            <button
+                              onClick={() => decreaseQty(item._id)}
+                              className="bg-[#2a2a2a] text-white w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold hover:bg-[#3a3a3a]"
                             >
-                              Select
-                            </motion.button>
-                          )}
+                              -
+                            </button>
+
+                            <span className="text-lg font-semibold text-yellow-400 w-6 text-center">
+                              {qty}
+                            </span>
+
+                            <button
+                              onClick={() => {
+                                qty === 0
+                                  ? addToCart(item)
+                                  : increaseQty(item._id);
+                              }}
+                              className="bg-yellow-400 text-black w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold hover:bg-yellow-300"
+                            >
+                              +
+                            </button>
+                          </div>
+
+                          {/* PRICE + SELECT BUTTON */}
+                          <div className="flex items-center justify-between mt-4">
+                            <p className="text-yellow-400 font-bold text-lg">
+                              ₹{item.price}
+                            </p>
+
+                            {isSelected ? (
+                              <button className="px-4 py-1.5 rounded-full text-xs font-semibold bg-green-500 text-black shadow-sm">
+                                Selected ({selected[item._id]})
+                              </button>
+                            ) : (
+                              <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => {
+                                  if (qty < 1) {
+                                    alert(
+                                      "Please select at least 1 quantity."
+                                    );
+                                    return;
+                                  }
+                                  setSelected((prev) => ({
+                                    ...prev,
+                                    [item._id]: qty,
+                                  }));
+                                }}
+                                className={`px-4 py-1.5 rounded-full text-xs font-semibold transition
+                                  ${
+                                    qty < 1
+                                      ? "bg-gray-600 text-gray-400 cursor-not-allowed"
+                                      : "bg-yellow-400 text-black hover:bg-yellow-300"
+                                  }`}
+                              >
+                                Select
+                              </motion.button>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-            </motion.div>
-          </section>
-        ))}
+                      </motion.div>
+                    );
+                  })}
+              </motion.div>
+            </section>
+          ))}
+        </div>
       </div>
 
       {/* CART FOOTER */}
       {totalQty > 0 && (
-        <div className="fixed bottom-0 left-0 w-full bg-[#1a1a1a] border-t border-yellow-400 shadow-xl px-5 py-4 flex justify-between items-center z-50">
-          <p className="font-semibold text-yellow-300 text-lg">
+        <div className="fixed bottom-0 left-0 w-full bg-[#090909]/95 backdrop-blur-lg border-t border-yellow-500/40 shadow-[0_-4px_25px_rgba(0,0,0,0.8)] px-5 py-4 flex justify-between items-center z-30">
+          <p className="font-semibold text-yellow-200 text-base sm:text-lg">
             {totalQty} items • ₹{totalPrice}
           </p>
           <button
             onClick={() => router.push("/order-review")}
-            className="bg-yellow-400 text-black px-6 py-2 rounded-full font-bold hover:bg-yellow-300 transition"
+            className="bg-yellow-400 text-black px-6 sm:px-8 py-2.5 rounded-full font-bold text-sm sm:text-base hover:bg-yellow-300 active:scale-95 transition shadow-lg"
           >
             Proceed →
           </button>
