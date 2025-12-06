@@ -47,6 +47,9 @@ const OrderSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    customerSessionId: {
+  type: String,
+    },
   },
   { timestamps: true }
 );

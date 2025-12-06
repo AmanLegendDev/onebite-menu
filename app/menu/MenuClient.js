@@ -18,6 +18,15 @@ export default function MenuClient({ categories, items, activeCategoryId, tableI
   const [selected, setSelected] = useState({});
   const [recentOrder, setRecentOrder] = useState(null);
 
+  const [customer, setCustomer] = useState(null);
+
+useEffect(() => {
+  if (typeof window === "undefined") return;
+  const saved = localStorage.getItem("onebite_user");
+  if (saved) setCustomer(JSON.parse(saved));
+}, []);
+
+
   const activeCat = activeCategoryId || categories[0]?._id;
 
   const getCategoryCount = (catId) => {
@@ -83,6 +92,12 @@ export default function MenuClient({ categories, items, activeCategoryId, tableI
       <h1 className="text-4xl font-extrabold text-yellow-400 mb-6 tracking-wide">
         ONEBITE Menu 🍕
       </h1>
+      {customer && (
+  <p className="text-gray-300 text-sm mb-4">
+    👤 {customer.name} • 📱 {customer.phone}
+  </p>
+)}
+
 
       {/* CATEGORY TABS */}
       <div

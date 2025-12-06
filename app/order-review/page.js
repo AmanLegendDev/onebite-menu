@@ -66,6 +66,10 @@ const baseTableName =
   (autoTableInfo?.number ? `Table ${autoTableInfo.number}` : null) ||
   table;
 
+const user = JSON.parse(localStorage.getItem("onebite_user"));
+
+
+
 const orderData = {
   items: finalCart,
   totalQty,
@@ -73,6 +77,9 @@ const orderData = {
   table: baseTableName,      // OLD FIELD for backward compatibility
   tableName: baseTableName,  // NEW FIELD
   tableId: autoTableInfo?.id || null,  // NEW FIELD
+  customerSessionId: user?.sessionId || null,
+  customerName: user?.name || "",
+  customerPhone: user?.phone || "",
   note,
   createdAt: new Date(),
 };
