@@ -1,12 +1,17 @@
-"use client"
+"use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  Layers,
+  Utensils,
+  ShoppingBag,
+  ChevronRight,
+} from "lucide-react";
 
 export default function AdminDashboard() {
-
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
-  const [orders, setOrders] = useState([]); // 👈 FIXED: orders added
+  const [orders, setOrders] = useState([]);
 
   async function loadCategories() {
     const res = await fetch("/api/categories");
@@ -14,67 +19,121 @@ export default function AdminDashboard() {
     setCategories(Array.isArray(data) ? data : []);
   }
 
- async function loadItems() {
-  const res = await fetch("/api/items?count=true");
-  const data = await res.json();
-  setItems(new Array(data.count));
-}
-
+  async function loadItems() {
+    const res = await fetch("/api/items?count=true");
+    const data = await res.json();
+    setItems(new Array(data.count));
+  }
 
   async function loadOrders() {
     const res = await fetch("/api/orders");
     const data = await res.json();
-    setOrders(data.orders || []); // 👈 FIXED
+    setOrders(data.orders || []);
   }
 
   useEffect(() => {
     loadCategories();
     loadItems();
-    loadOrders(); // 👈 FIXED
+    loadOrders();
   }, []);
 
-  return (
-    <div>
-      <div className="flex flex-col items-center justify-center">
-        <h1 className="text-4xl font-bold mb-6">
-          Welcome, Admin 👑
-        </h1>
+  // 🔥 CARD COMPONENT
+  function Card({ title, count, icon: Icon, href, color }) {
+    return (
+      <Link href={href}>
+        <div
+          className={`p-6 rounded-xl border border-[#222] bg-gradient-to-br ${color}
+          shadow-[0_0_20px_rgba(0,0,0,0.5)]
+          hover:shadow-[0_0_30px_rgba(255,106,61,0.4)]
+          transition transform hover:-translate-y-1 cursor-pointer`}
+        >
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold opacity-90">{title}</h2>
+            <Icon size={26} className="opacity-90" />
+          </div>
 
-        <p className="text-gray-400 mb-10">
-          Your Digital Menu System Dashboard
+          <p className="text-5xl font-extrabold mt-3">{count}</p>
+
+          <div className="flex items-center gap-1 text-sm text-gray-300 mt-3">
+            <span>View details</span>
+            <ChevronRight size={16} />
+          </div>
+        </div>
+      </Link>
+    );
+  }
+
+  return (
+    <div className="pt-4">
+      {/* HEADER */}
+      <div className="text-center mb-10">
+        <h1 className="text-4xl font-bold text-white tracking-wide">
+          Welcome, Admin 🔥
+        </h1>
+        <p className="text-gray-400 mt-2 text-sm">
+          Track restaurant performance, manage items & monitor all orders in real-time.
         </p>
       </div>
 
-      {/* ------------------- DASHBOARD CARDS ------------------- */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* CARDS GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
 
-        {/* CARD 1 */}
-        <Link href="/admin/categories">
-          <div className="bg-[#111111] p-6 rounded-xl border border-[#1f1f1f] shadow hover:shadow-xl transition">
-            <h2 className="text-lg font-semibold mb-2">Categories</h2>
-            <p className="text-4xl font-bold">{categories.length}</p>
-            <span className="text-gray-400 text-sm">Total categories</span>
-          </div>
-        </Link>
+        <Card
+          title="Categories"
+          count={categories.length}
+          icon={Layers}
+          href="/admin/categories"
+          color="from-[#141414] to-[#1b1b1b]"
+        />
 
-        {/* CARD 2 */}
-        <Link href="/admin/items">
-          <div className="bg-[#111111] p-6 rounded-xl border border-[#1f1f1f] shadow hover:shadow-xl transition">
-            <h2 className="text-lg font-semibold mb-2">Menu Items</h2>
-            <p className="text-4xl font-bold">{items.length}</p>
-            <span className="text-gray-400 text-sm">Total menu items</span>
-          </div>
-        </Link>
+        <Card
+          title="Menu Items"
+          count={items.length}
+          icon={Utensils}
+          href="/admin/items"
+          color="from-[#151515] to-[#1d1d1d]"
+        />
 
-        {/* CARD 3 — ORDERS */}
-        <Link href="/admin/orders">
-          <div className="bg-[#111] p-6 rounded-xl border border-gray-800 shadow hover:border-[#ff6a3d] transition cursor-pointer">
-            <h2 className="text-xl font-semibold">Orders</h2>
-            <p className="text-4xl font-bold mt-2">{orders.length}</p>
-            <p className="text-gray-400 text-sm mt-1">Customer orders</p>
-          </div>
-        </Link>
+        <Card
+          title="Orders"
+          count={orders.length}
+          icon={ShoppingBag}
+          href="/admin/orders"
+          color="from-[#1a1a1a] to-[#232323]"
+        />
 
+      </div>
+
+      {/* QUICK SHORTCUTS */}
+      <div className="mt-14">
+        <h3 className="text-lg font-semibold mb-4 text-gray-300">
+          Quick Actions ⚡
+        </h3>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+
+          <Link href="/admin/orders">
+            <div className="p-5 bg-[#121212] border border-[#222] rounded-xl hover:bg-[#181818] transition">
+              <p className="text-xl font-semibold">View Active Orders</p>
+              <p className="text-sm text-gray-400 mt-1">Check all recent orders</p>
+            </div>
+          </Link>
+
+          <Link href="/admin/items/new">
+            <div className="p-5 bg-[#121212] border border-[#222] rounded-xl hover:bg-[#181818] transition">
+              <p className="text-xl font-semibold">Add New Item</p>
+              <p className="text-sm text-gray-400 mt-1">Create a menu item</p>
+            </div>
+          </Link>
+
+          <Link href="/admin/orders-by-table">
+            <div className="p-5 bg-[#121212] border border-[#222] rounded-xl hover:bg-[#181818] transition">
+              <p className="text-xl font-semibold">Orders by Table</p>
+              <p className="text-sm text-gray-400 mt-1">Track per-table orders</p>
+            </div>
+          </Link>
+
+        </div>
       </div>
     </div>
   );

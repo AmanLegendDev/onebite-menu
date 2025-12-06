@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 export default function NewItemPage() {
   const router = useRouter();
@@ -11,7 +12,9 @@ export default function NewItemPage() {
   const [price, setPrice] = useState("");
   const [desc, setDesc] = useState("");
   const [category, setCategory] = useState("");
-  const [image, setImage] = useState(null); // NEW
+  const [image, setImage] = useState(null);
+  const [preview, setPreview] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     loadCategories();
@@ -23,75 +26,122 @@ export default function NewItemPage() {
     setCategories(data);
   }
 
+  function handleImage(e) {
+    const file = e.target.files[0];
+    setImage(file);
+
+    if (file) {
+      setPreview(URL.createObjectURL(file));
+    }
+  }
+
   async function addItem() {
+    if (!name || !price || !category) {
+      alert("Fill all required fields");
+      return;
+    }
+
+    setLoading(true);
+
     const formData = new FormData();
     formData.append("name", name);
     formData.append("price", price);
     formData.append("description", desc);
     formData.append("category", category);
-    formData.append("image", image); // NEW file
+    if (image) formData.append("image", image);
 
-    await fetch("/api/items", {
-      method: "POST",
-      body: formData,
-    });
+    await fetch("/api/items", { method: "POST", body: formData });
 
+    // ⚡ INSTANT redirect (no waiting for image upload)
     router.push("/admin/items");
   }
 
   return (
     <div className="p-6 text-white">
-      <h1 className="text-3xl font-bold mb-6">Add New Item</h1>
 
-      <div className="bg-[#111] p-5 rounded">
+      {/* HEADER */}
+      <div className="flex items-center gap-4 mb-8">
+        <Image
+          src="/onebite-2.jpg"
+          width={50}
+          height={50}
+          alt="OneBite Logo"
+          className="rounded-full border border-[#ff6a3d]"
+        />
+        <h1 className="text-3xl font-extrabold tracking-wide">
+          Add New Menu Item
+        </h1>
+      </div>
 
+      <div className="bg-[#0e0e0e] p-6 rounded-xl border border-[#1f1f1f] shadow-xl max-w-xl">
+
+        {/* NAME */}
+        <label className="font-semibold text-sm mb-1 block">Item Name *</label>
         <input
-          className="p-2 w-full mb-3 bg-black border border-gray-700 rounded"
-          placeholder="Item name..."
+          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg focus:border-[#ff6a3d] outline-none"
+          placeholder="e.g., Margherita Pizza"
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
 
+        {/* PRICE */}
+        <label className="font-semibold text-sm mb-1 block">Price *</label>
         <input
-          className="p-2 w-full mb-3 bg-black border border-gray-700 rounded"
-          placeholder="Price..."
+          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg focus:border-[#ff6a3d] outline-none"
+          placeholder="₹ Price"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
         />
 
+        {/* DESCRIPTION */}
+        <label className="font-semibold text-sm mb-1 block">Description</label>
         <textarea
-          className="p-2 w-full mb-3 bg-black border border-gray-700 rounded"
-          placeholder="Description..."
+          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg min-h-[90px] focus:border-[#ff6a3d]"
+          placeholder="Short description..."
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
         />
 
+        {/* CATEGORY */}
+        <label className="font-semibold text-sm mb-1 block">Category *</label>
         <select
-          className="p-2 w-full mb-3 bg-black border border-gray-700 rounded"
+          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg focus:border-[#ff6a3d]"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >
           <option value="">Select Category...</option>
           {categories.map((c) => (
-            <option key={c._id} value={c._id}>
-              {c.name}
-            </option>
+            <option key={c._id} value={c._id}>{c.name}</option>
           ))}
         </select>
 
-        {/* IMAGE INPUT */}
+        {/* IMAGE UPLOAD */}
+        <label className="font-semibold text-sm mb-1 block">Item Image</label>
         <input
           type="file"
-          className="p-2 w-full mb-3 bg-black border border-gray-700 rounded"
-          onChange={(e) => setImage(e.target.files[0])}
+          onChange={handleImage}
+          className="p-3 w-full mb-3 bg-black border border-gray-700 rounded-lg"
         />
 
+        {/* PREVIEW */}
+        {preview && (
+          <div className="mt-3 flex justify-center">
+            <img
+              src={preview}
+              className="w-40 h-40 object-cover rounded-lg border border-gray-700"
+            />
+          </div>
+        )}
+
+        {/* SUBMIT BUTTON */}
         <button
           onClick={addItem}
-          className="bg-blue-600 px-4 py-2 rounded"
+          disabled={loading}
+          className="w-full bg-[#ff6a3d] hover:bg-[#ff874f] py-3 rounded-xl font-bold mt-6 transition active:scale-95"
         >
-          Add Item
+          {loading ? "Adding..." : "Add Item"}
         </button>
+
       </div>
     </div>
   );

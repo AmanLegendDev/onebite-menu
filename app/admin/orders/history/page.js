@@ -2,10 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { Receipt, Timer, User } from "lucide-react";
 
-// --------------------------------------------------
-// HISTORY PAGE
-// --------------------------------------------------
 export default function OrdersHistoryPage() {
   const [orders, setOrders] = useState([]);
   const [page, setPage] = useState(1);
@@ -14,9 +12,7 @@ export default function OrdersHistoryPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState(null);
 
-  // -----------------------------
-  // INITIAL LOAD
-  // -----------------------------
+  // INITIAL
   useEffect(() => {
     loadOrders(1);
   }, []);
@@ -29,11 +25,8 @@ export default function OrdersHistoryPage() {
       );
       const data = await res.json();
 
-      if (pageToLoad === 1) {
-        setOrders(data.orders);
-      } else {
-        setOrders((prev) => [...prev, ...data.orders]);
-      }
+      if (pageToLoad === 1) setOrders(data.orders);
+      else setOrders((p) => [...p, ...data.orders]);
 
       setHasMore(data.hasMore);
       setPage(pageToLoad);
@@ -45,9 +38,7 @@ export default function OrdersHistoryPage() {
     setLoadingMore(false);
   }
 
-  // -----------------------------
-  // GROUP ORDERS BY DATE
-  // -----------------------------
+  // GROUP BY DATE
   function groupByDate(list) {
     const groups = {};
 
@@ -68,90 +59,89 @@ export default function OrdersHistoryPage() {
   const grouped = groupByDate(orders);
   const dates = Object.keys(grouped);
 
-  // -----------------------------
-  // ORDER CARD
-  // -----------------------------
+  // CARD UI
   function OrderCard({ o }) {
-  const isCompleted = o.status === "served";
+    const isCompleted = o.status === "served";
 
-  return (
-    <div
-      className="bg-[#111] border border-gray-800 rounded-xl p-5 shadow hover:shadow-xl hover:border-[#ff6a3d] transition cursor-pointer"
-      onClick={() => setSelectedOrder(o)}
-    >
-      <p className="text-sm text-gray-400 mb-2">
-        {new Date(o.createdAt).toLocaleString()}
-      </p>
+    return (
+      <div
+        onClick={() => setSelectedOrder(o)}
+        className="bg-[#0e0e0e] border border-[#1e1e1e] rounded-xl p-6 shadow-lg 
+          hover:border-[#ff6a3d] hover:shadow-xl transition cursor-pointer"
+      >
+        {/* Time */}
+        <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+          <Timer size={14} /> {new Date(o.createdAt).toLocaleString()}
+        </p>
 
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold mb-2 text-[#ff6a3d]">
-          Table {o.tableName || o.table}
-        </h2>
+        {/* Table + Status */}
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-xl font-bold text-[#ff6a3d]">
+            Table {o.tableName || o.table}
+          </h2>
 
-        {isCompleted ? (
-          <span className="text-green-400 text-xl font-bold">✓</span>
-        ) : (
-          <span className="text-yellow-400 text-sm">Pending</span>
-        )}
+          {isCompleted ? (
+            <span className="text-green-500 font-bold text-lg">✓</span>
+          ) : (
+            <span className="text-yellow-400 text-xs bg-yellow-900/30 px-2 py-1 rounded-lg">
+              Pending
+            </span>
+          )}
+        </div>
+
+        {/* Customer Name */}
+        <p className="text-sm text-gray-300 flex items-center gap-2">
+          <User size={14} />
+          {o.customerName || "Unknown"} — {o.customerPhone}
+        </p>
+
+        <p className="text-gray-400 mt-3">{o.totalQty} items</p>
+
+        <div className="flex justify-between items-center mt-2">
+          <p className="font-bold text-xl text-white">₹{o.totalPrice}</p>
+
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              window.location.href = `/admin/orders/bill/${o._id}`;
+            }}
+            className="bg-[#ff6a3d] hover:bg-[#ff7c50] text-white text-sm px-3 py-1 rounded-lg flex items-center gap-1"
+          >
+            <Receipt size={14} /> Bill
+          </button>
+        </div>
       </div>
+    );
+  }
 
-      <p className="text-gray-300 mb-1">{o.totalQty} items</p>
-
-      <div className="flex justify-between items-center">
-        <p className="font-bold text-lg text-white">₹{o.totalPrice}</p>
-
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            window.location.href = `/admin/orders/bill/${o._id}`;
-          }}
-          className="font-bold bg-[#ff6a3d] hover:bg-blue-700 text-white text-sm px-2 py-1 rounded"
-        >
-          View Bill
-        </button>
-      </div>
-    </div>
-  );
-}
-
-
-  // --------------------------------------------------
-  // UI
-  // --------------------------------------------------
   return (
     <div className="p-6 text-white">
 
-      {/* BACK BUTTON */}
+      {/* BACK */}
       <Link
         href="/admin/orders"
-        className="inline-block mb-6 px-4 py-2 rounded-lg bg-gray-800 hover:bg-gray-700 text-sm"
+        className="inline-block mb-6 px-4 py-2 rounded-lg bg-[#111] border border-[#222] hover:bg-[#1a1a1a]"
       >
         ← Back to Orders
       </Link>
 
-      <h1 className="text-3xl font-extrabold tracking-tight">
-        Order History
-      </h1>
-      <p className="text-gray-400 mt-1 mb-10">
-        Full date-wise history of all restaurant orders
+      <h1 className="text-4xl font-extrabold">Order History</h1>
+      <p className="text-gray-400 mb-10">
+        Complete date-wise restaurant order records
       </p>
 
       {loading && (
-        <div className="text-center py-10 text-gray-400 text-lg">
-          Loading history...
-        </div>
+        <div className="text-center text-gray-400 py-10">Loading history...</div>
       )}
 
       {!loading && orders.length === 0 && (
-        <div className="text-center py-12 text-gray-500 text-lg">
-          No order history yet 😶
-        </div>
+        <div className="text-center text-gray-500 py-10">No history yet 😶</div>
       )}
 
-      {/* DATE GROUPS */}
+      {/* GROUPED SECTIONS */}
       {dates.map((date) => (
-        <div key={date} className="mb-12">
-          <h2 className="text-xl font-bold mb-3 text-[#ff6a3d]">{date}</h2>
+        <div key={date} className="mb-14">
+          <h2 className="text-xl font-bold text-[#ff6a3d] mb-3">{date}</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {grouped[date].map((o) => (
@@ -161,28 +151,26 @@ export default function OrdersHistoryPage() {
         </div>
       ))}
 
-      {/* LOAD MORE BUTTON */}
+      {/* LOAD MORE */}
       {hasMore && (
-        <div className="flex justify-center mt-10">
+        <div className="flex justify-center mt-8">
           <button
             disabled={loadingMore}
             onClick={() => {
               setLoadingMore(true);
               loadOrders(page + 1);
             }}
-            className="px-6 py-3 rounded-xl bg-[#222] border border-gray-700 hover:bg-[#333] font-semibold text-white transition"
+            className="px-6 py-3 rounded-xl bg-[#111] border border-[#222] hover:bg-[#1c1c1c] font-semibold"
           >
             {loadingMore ? "Loading..." : "Load More"}
           </button>
         </div>
       )}
 
-      {/* ----------------------------- */}
-      {/* MODAL DETAIL VIEW */}
-      {/* ----------------------------- */}
+      {/* MODAL */}
       {selectedOrder && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur flex items-center justify-center z-50">
-          <div className="bg-[#111] w-[90%] max-w-lg rounded-xl border border-gray-800 p-6 relative shadow-xl">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="bg-[#0f0f0f] w-[90%] max-w-lg p-6 rounded-2xl border border-[#222] shadow-xl relative">
 
             <button
               onClick={() => setSelectedOrder(null)}
@@ -191,52 +179,57 @@ export default function OrdersHistoryPage() {
               ×
             </button>
 
-            <h2 className="text-2xl font-bold text-[#ff6a3d]">
-              Table {selectedOrder.table}
+            <h2 className="text-2xl font-bold text-[#ff6a3d] mb-1">
+              Table {selectedOrder.tableName || selectedOrder.table}
             </h2>
 
-            <p className="text-gray-400 text-sm mb-4">
+            <p className="text-gray-400 text-xs mb-3">
               {new Date(selectedOrder.createdAt).toLocaleString()}
             </p>
 
-            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 custom-scroll">
-              {selectedOrder.items.map((item) => (
+            {/* Customer */}
+            <p className="text-sm text-gray-300 flex items-center gap-2 mb-4">
+              <User size={14} />
+              {selectedOrder.customerName || "Unknown"} ({selectedOrder.customerPhone})
+            </p>
+
+            {/* Items */}
+            <div className="max-h-64 overflow-y-auto pr-2 custom-scroll space-y-3">
+              {selectedOrder.items.map((it) => (
                 <div
-                  key={item._id}
+                  key={it._id}
                   className="flex justify-between border-b border-gray-800 pb-2"
                 >
                   <div>
-                    <p className="font-medium">{item.name}</p>
-                    <p className="text-sm text-gray-400">
-                      {item.qty} × ₹{item.price}
-                    </p>
+                    <p className="font-semibold">{it.name}</p>
+                    <p className="text-sm text-gray-500">{it.qty} × ₹{it.price}</p>
                   </div>
 
-                  
-                  <p className="font-semibold text-[#ff6a3d]">
-                    ₹{item.qty * item.price}
+                  <p className="text-[#ff6a3d] font-bold">
+                    ₹{it.qty * it.price}
                   </p>
-
                 </div>
-                
               ))}
             </div>
 
+            {/* Note */}
             {selectedOrder.note && (
-              <p className="mt-4 p-3 bg-gray-900 rounded-lg text-gray-300 text-sm">
-                <span className="font-semibold text-white">Note:</span>{" "}
+              <p className="mt-4 bg-[#1a1a1a] p-3 rounded-xl text-gray-300 text-sm">
+                <span className="font-semibold text-white">Note: </span>
                 {selectedOrder.note}
               </p>
             )}
 
-            <div className="flex justify-between text-lg font-bold mt-4">
+            {/* Total */}
+            <div className="flex justify-between text-xl font-bold mt-5">
               <p>Total</p>
               <p>₹{selectedOrder.totalPrice}</p>
             </div>
 
+            {/* Close */}
             <button
               onClick={() => setSelectedOrder(null)}
-              className="w-full mt-6 bg-[#ff6a3d] py-3 rounded-xl font-semibold text-white hover:brightness-110 transition"
+              className="w-full mt-6 bg-[#ff6a3d] hover:bg-[#ff7c50] py-3 rounded-xl font-semibold"
             >
               Close
             </button>
@@ -244,6 +237,7 @@ export default function OrdersHistoryPage() {
           </div>
         </div>
       )}
+
     </div>
   );
 }
