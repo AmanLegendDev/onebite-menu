@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import Orders from "@/models/Orders";  // ✔ correct
+import Order from "@/models/Orders";  // ✔ correct
 
 export async function PUT(req, { params }) {
   try {
     await connectDB();
 
-    await Orders.findByIdAndUpdate(params.id, {
+    await Order.findByIdAndUpdate(params.id, {
       seenByAdmin: true,
     });
 

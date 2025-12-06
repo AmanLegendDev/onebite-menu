@@ -93,6 +93,15 @@ export default function OrderSuccessPage() {
         <p className="text-center text-gray-400 text-xs mt-4">
           {new Date(order.createdAt).toLocaleString()}
         </p>
+                <button
+                onClick={(e) => {
+                e.stopPropagation();
+                window.location.href = `/bill/${order._id}`;
+                               }}
+                     className=" font-bold bg-[#ff6a3d] hover:bg-blue-700 text-white text-sm px-2 py-1 rounded"
+           >
+               View Bill
+                </button>
       </div>
 
       {/* BUTTON */}

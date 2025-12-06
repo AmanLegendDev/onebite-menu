@@ -108,7 +108,7 @@ export default function BillPage({ params }) {
       </div>
 
       <div className="max-w-lg mx-auto mt-4">
-        <a href="/admin/orders" className="text-blue-600 underline">
+        <a href="/order-success" className="text-blue-600 underline">
           ← Back to Orders
         </a>
       </div>

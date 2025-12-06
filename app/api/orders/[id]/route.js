@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import Orders from "@/models/Orders";
+import Order from "@/models/Orders";
 
 
 
@@ -9,7 +9,7 @@ export async function GET(req, { params }) {
   try {
     await connectDB();
 
-    const order = await Orders.findById(params.id).lean();
+    const order = await Order.findById(params.id).lean();
 
     if (!order) {
       return NextResponse.json(
@@ -37,7 +37,7 @@ export async function PUT(req, { params }) {
   const body = await req.json();
 
   try {
-    const updated = await Orders.findByIdAndUpdate(
+    const updated = await Order.findByIdAndUpdate(
       params.id,
       { status: body.status },
       { new: true }
@@ -54,7 +54,7 @@ export async function DELETE(req, { params }) {
     await connectDB();
     const { id } = params;
 
-    await Orders.findByIdAndDelete(id);
+    await Order.findByIdAndDelete(id);
 
     return NextResponse.json(
       { success: true, message: "Order deleted" },

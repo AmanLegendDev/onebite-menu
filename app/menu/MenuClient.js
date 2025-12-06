@@ -6,7 +6,7 @@ import { useCart } from "@/app/context/CartContext";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
-export default function MenuClient({ categories, items, activeCategoryId }) {
+export default function MenuClient({ categories, items, activeCategoryId, tableInfo }) {
   const router = useRouter();
   const tabsRef = useRef(null);
 
@@ -29,6 +29,23 @@ export default function MenuClient({ categories, items, activeCategoryId }) {
       )
       .reduce((sum, item) => sum + item.qty, 0);
   };
+
+
+    // Save table info when QR menu is opened
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    if (tableInfo && tableInfo.id) {
+      const safe = {
+        id: tableInfo.id,
+        name: tableInfo.name,
+        number: tableInfo.number,
+      };
+
+      sessionStorage.setItem("tableInfo", JSON.stringify(safe));
+    }
+  }, [tableInfo]);
+
 
   useEffect(() => {
     const saved = localStorage.getItem("latestOrder");

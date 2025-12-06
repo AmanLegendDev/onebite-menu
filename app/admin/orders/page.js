@@ -32,9 +32,16 @@ async function loadOrders() {
     const data = await res.json();
 
     // Agar API se data aaya → 50 orders set karo
-    if (data.orders && data.orders.length > 0) {
-      setOrders(data.orders);
-    }
+if (data.orders && data.orders.length > 0) {
+
+  // ❗ sirf ACTIVE orders dikhane ke liye
+  const activeOrders = data.orders.filter(
+    (o) => o.status !== "served"
+  );
+
+  setOrders(activeOrders);
+}
+
   } catch (err) {
     console.log("Orders Fetch Error:", err);
   }
@@ -132,7 +139,8 @@ async function loadOrders() {
 
 <div className="flex justify-between">
           <h2 className="text-xl font-bold mb-2 text-[#ff6a3d]">
-            Table {o.table}
+            Table {o.tableName || o.table}
+
           </h2>
 
           {isNew && (
@@ -154,6 +162,8 @@ async function loadOrders() {
 >
   View Bill
 </button>
+
+
 
       </div>
     );
@@ -266,6 +276,29 @@ async function loadOrders() {
               <p>Total</p>
               <p>₹{selectedOrder.totalPrice}</p>
             </div>
+
+<button
+  onClick={async (e) => {
+    e.stopPropagation();
+
+    const id = selectedOrder._id;
+
+    const res = await fetch(`/api/orders/complete/${id}`, {
+      method: "PUT",
+    });
+
+    // Backend update ho gaya → ab list fresh reload
+    await loadOrders();
+
+    setSelectedOrder(null);
+  }}
+  className="w-full mt-4 bg-green-600 py-3 rounded-xl font-semibold text-white hover:brightness-110 transition"
+>
+  ✓ Mark as Completed
+</button>
+
+
+
 
             <button
               onClick={() => setSelectedOrder(null)}

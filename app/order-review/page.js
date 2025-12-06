@@ -13,6 +13,27 @@ export default function OrderReviewPage() {
   const [table, setTable] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
+  const [autoTableInfo, setAutoTableInfo] = useState(null);
+
+
+
+  useEffect(() => {
+  if (typeof window === "undefined") return;
+
+  const info = sessionStorage.getItem("tableInfo");
+  if (info) {
+    try {
+      const parsed = JSON.parse(info);
+      setAutoTableInfo(parsed);
+
+      // replace existing manual table number
+      if (parsed.name || parsed.number) {
+        setTable(parsed.name || `Table ${parsed.number}`);
+      }
+    } catch {}
+  }
+}, []);
+
 
   // Restore cart after refresh
   useEffect(() => {
@@ -40,14 +61,21 @@ export default function OrderReviewPage() {
   async function placeOrder() {
     if (!table) return alert("Please enter table number!");
 
-    const orderData = {
-      items: finalCart,
-      totalQty,
-      totalPrice,
-      table,
-      note,
-      createdAt: new Date(),
-    };
+const baseTableName =
+  autoTableInfo?.name ||
+  (autoTableInfo?.number ? `Table ${autoTableInfo.number}` : null) ||
+  table;
+
+const orderData = {
+  items: finalCart,
+  totalQty,
+  totalPrice,
+  table: baseTableName,      // OLD FIELD for backward compatibility
+  tableName: baseTableName,  // NEW FIELD
+  tableId: autoTableInfo?.id || null,  // NEW FIELD
+  note,
+  createdAt: new Date(),
+};
 
     const res = await fetch("/api/orders", {
       method: "POST",
@@ -118,19 +146,27 @@ export default function OrderReviewPage() {
       <div className="h-[2px] bg-[#FFB100] w-20 mb-6 rounded-full" />
 
       {/* TABLE NUMBER */}
-      <div className="mb-5">
-        <label className="font-semibold text-sm block mb-1">
-          Table Number <span className="text-red-500">*</span>
-        </label>
+<div className="mb-5">
+  <label className="font-semibold text-sm block mb-1">
+    Table <span className="text-red-500">*</span>
+  </label>
 
-        <input
-          type="number"
-          placeholder="Enter table number"
-          value={table}
-          onChange={(e) => setTable(e.target.value)}
-          className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-[#FFB100] outline-none transition"
-        />
-      </div>
+  {autoTableInfo ? (
+    <div className="w-full p-3 rounded-lg border border-gray-300 bg-gray-100 text-gray-800 font-semibold">
+      {autoTableInfo.name ||
+        (autoTableInfo.number ? `Table ${autoTableInfo.number}` : table)}
+    </div>
+  ) : (
+    <input
+      type="number"
+      placeholder="Enter table number"
+      value={table}
+      onChange={(e) => setTable(e.target.value)}
+      className="w-full p-3 rounded-lg border border-gray-300 bg-white focus:ring-2 focus:ring-[#FFB100] outline-none transition"
+    />
+  )}
+</div>
+
 
       {/* NOTE */}
       <label className="font-semibold text-sm block mb-1">

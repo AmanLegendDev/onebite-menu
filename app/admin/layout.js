@@ -42,6 +42,14 @@ if (!session || session.user.role !== "admin") {
 }
 
 
+const activeStyle =
+  "flex items-center gap-3 p-2 rounded-lg bg-[#1a1a1a] text-white font-semibold border border-[#ff6a3d]";
+
+const inactiveStyle =
+  "flex items-center gap-3 p-2 rounded-lg text-gray-300 hover:bg-[#1a1a1a] hover:text-white transition";
+
+
+
 
   // ⭐ FINAL SIDEBAR ROUTES
   const links = [
@@ -104,8 +112,17 @@ if (!session || session.user.role !== "admin") {
                 <link.icon size={20} />
                 {link.name}
               </Link>
+              
             );
           })}
+
+          <Link
+  href="/admin/orders-by-table"
+  className={pathname === "/admin/orders-by-table" ? activeStyle : inactiveStyle}
+>
+  Tables
+</Link>
+
         </div>
 
         {/* LOGOUT */}

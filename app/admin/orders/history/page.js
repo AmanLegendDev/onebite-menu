@@ -72,40 +72,48 @@ export default function OrdersHistoryPage() {
   // ORDER CARD
   // -----------------------------
   function OrderCard({ o }) {
-    return (
-      <div
-        className="bg-[#111] border border-gray-800 rounded-xl p-5 shadow hover:shadow-xl hover:border-[#ff6a3d] transition cursor-pointer"
-        onClick={() => setSelectedOrder(o)}
-      >
-        <p className="text-sm text-gray-400 mb-2">
-          {new Date(o.createdAt).toLocaleString()}
-        </p>
+  const isCompleted = o.status === "served";
 
+  return (
+    <div
+      className="bg-[#111] border border-gray-800 rounded-xl p-5 shadow hover:shadow-xl hover:border-[#ff6a3d] transition cursor-pointer"
+      onClick={() => setSelectedOrder(o)}
+    >
+      <p className="text-sm text-gray-400 mb-2">
+        {new Date(o.createdAt).toLocaleString()}
+      </p>
+
+      <div className="flex justify-between items-center">
         <h2 className="text-xl font-bold mb-2 text-[#ff6a3d]">
-          Table {o.table}
+          Table {o.tableName || o.table}
         </h2>
 
-        <p className="text-gray-300 mb-1">{o.totalQty} items</p>
-
-<div className="flex justify-between">
-<p className="font-bold text-lg text-white">₹{o.totalPrice}</p>
-    
-        <button
-  onClick={(e) => {
-    e.stopPropagation();
-    window.location.href = `/admin/orders/bill/${o._id}`;
-  }}
-  className=" font-bold bg-[#ff6a3d] hover:bg-blue-700 text-white text-sm px-2 py-1 rounded"
->
-  View Bill
-</button>
-</div>
-        
-
-
+        {isCompleted ? (
+          <span className="text-green-400 text-xl font-bold">✓</span>
+        ) : (
+          <span className="text-yellow-400 text-sm">Pending</span>
+        )}
       </div>
-    );
-  }
+
+      <p className="text-gray-300 mb-1">{o.totalQty} items</p>
+
+      <div className="flex justify-between items-center">
+        <p className="font-bold text-lg text-white">₹{o.totalPrice}</p>
+
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            window.location.href = `/admin/orders/bill/${o._id}`;
+          }}
+          className="font-bold bg-[#ff6a3d] hover:bg-blue-700 text-white text-sm px-2 py-1 rounded"
+        >
+          View Bill
+        </button>
+      </div>
+    </div>
+  );
+}
+
 
   // --------------------------------------------------
   // UI

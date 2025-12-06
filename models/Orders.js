@@ -15,9 +15,21 @@ const OrderSchema = new mongoose.Schema(
     totalQty: Number,
     totalPrice: Number,
 
+    // OLD FIELD (keep for backward compatibility)
     table: {
       type: String,
-      required: true,
+      // required hata diya so old docs bhi safe
+    },
+
+    // NEW: proper relation with Table model
+    tableId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Table",
+    },
+
+    // NEW: store display name (e.g. "Table 1")
+    tableName: {
+      type: String,
     },
 
     note: {
@@ -31,7 +43,6 @@ const OrderSchema = new mongoose.Schema(
       default: "pending",
     },
 
-    // ⭐ NEW FIELD TO HANDLE REALTIME NEW BADGE
     seenByAdmin: {
       type: Boolean,
       default: false,

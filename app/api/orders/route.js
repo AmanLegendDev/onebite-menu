@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
-import Orders from "@/models/Orders";
+import Order from "@/models/Orders";
 
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export async function GET(req) {
     const { searchParams } = new URL(req.url);
     const latest = searchParams.get("latest");
 
-    let orders = await Orders.find().sort({ createdAt: -1 }).lean();
+    let orders = await Order.find().sort({ createdAt: -1 }).lean();
 
     if (latest === "true") {
       orders = orders.slice(0, 1);
@@ -37,7 +37,7 @@ export async function POST(req) {
 
     const body = await req.json();
 
-    const newOrder = await Orders.create(body);  // 👈 FIXED — correct model
+    const newOrder = await Order.create(body);  // 👈 FIXED — correct model
 
     return NextResponse.json(
       { success: true, order: newOrder },
