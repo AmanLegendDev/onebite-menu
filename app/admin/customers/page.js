@@ -73,7 +73,7 @@ export default function AdminCustomersPage() {
                 href={`/admin/customers/${u.phone}/orders`}
                 className="flex-1 bg-[#ff6a3d] px-3 py-2 rounded-lg text-center font-semibold text-sm"
               >
-                View Orders →
+              View Orders →
               </Link>
 
               <Link

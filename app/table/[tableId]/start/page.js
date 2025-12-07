@@ -10,8 +10,9 @@ export default function StartPage() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [tableInfo, setTableInfo] = useState(null);
+  const [loadingStart, setLoadingStart] = useState(false); // 🔥 new
 
-  // 🔥 Table Info Load
+  // Load table info
   useEffect(() => {
     async function fetchTable() {
       const res = await fetch(`/api/tables/${tableId}`);
@@ -21,19 +22,24 @@ export default function StartPage() {
     fetchTable();
   }, [tableId]);
 
-  // 🔥 Already logged in? -> direct menu
-  useEffect(() => {
-    const user = localStorage.getItem("onebite_user");
-    if (user) router.push(`/table/${tableId}/menu`);
-  }, [router, tableId]);
-
   async function handleStart(e) {
     e.preventDefault();
 
-    if (name.trim().length < 2) return alert("Enter a valid name");
-    if (phone.trim().length < 10) return alert("Enter a valid phone number");
+    if (loadingStart) return; // Stop double click
+    setLoadingStart(true);
 
-    // 1️⃣ Create CustomerSession
+    if (name.trim().length < 2) {
+      alert("Enter a valid name");
+      setLoadingStart(false);
+      return;
+    }
+    if (phone.trim().length < 10) {
+      alert("Enter a valid phone number");
+      setLoadingStart(false);
+      return;
+    }
+
+    // Create session
     const sessionRes = await fetch("/api/customer-session", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -41,20 +47,19 @@ export default function StartPage() {
     });
 
     const sessionData = await sessionRes.json();
-
     if (!sessionData.success) {
       alert("Failed to start session");
+      setLoadingStart(false);
       return;
     }
 
-    // 2️⃣ Create or Update CustomerUser (MAIN USER DB)
+    // Create or update customer user
     await fetch("/api/customer-users/create-or-update", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, phone }),
     });
 
-    // 3️⃣ Save in LocalStorage
     const userData = {
       name,
       phone,
@@ -62,17 +67,15 @@ export default function StartPage() {
       sessionId: sessionData.sessionId,
       joinedAt: Date.now(),
     };
-
     localStorage.setItem("onebite_user", JSON.stringify(userData));
 
-    // 4️⃣ Move to Menu
     router.push(`/table/${tableId}/menu`);
   }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-black text-white p-6">
       <div className="bg-[#111] p-8 rounded-xl w-full max-w-md shadow-2xl border border-[#222]">
-        
+
         <h1 className="text-3xl font-bold text-center text-[#FFB100]">
           Welcome to OneBite 🍕
         </h1>
@@ -85,7 +88,6 @@ export default function StartPage() {
         </p>
 
         <form onSubmit={handleStart} className="mt-8 flex flex-col gap-4">
-          
           <input
             type="text"
             placeholder="Your Name"
@@ -104,11 +106,23 @@ export default function StartPage() {
 
           <button
             type="submit"
-            className="bg-[#FFB100] text-black p-3 rounded-md font-semibold hover:bg-[#ffc53e] transition"
+            disabled={loadingStart}
+            className={`p-3 rounded-md font-semibold transition 
+              ${
+                loadingStart
+                  ? "bg-gray-600 text-black cursor-not-allowed"
+                  : "bg-[#FFB100] text-black hover:bg-[#ffc53e]"
+              }`}
           >
-            Start Ordering 🚀
+            {loadingStart ? (
+              <span className="flex items-center justify-center gap-2">
+                <span className="animate-spin h-4 w-4 border-2 border-black border-t-transparent rounded-full"></span>
+                Starting…
+              </span>
+            ) : (
+              "Start Ordering 🚀"
+            )}
           </button>
-
         </form>
       </div>
     </div>

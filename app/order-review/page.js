@@ -53,7 +53,7 @@ export default function OrderReviewPage() {
 
     const baseTableName =
       autoTableInfo?.name ||
-      (autoTableInfo?.number ? `Table ${autoTableInfo.number}` : null);
+      (autoTableInfo?.number ? `Table ${autoTableInfo.number}` : "Unrecognized Table");
 
     const orderData = {
       items: finalCart,

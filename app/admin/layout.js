@@ -5,6 +5,8 @@ import AdminNotification from "@/app/component/AdminNotification";
 import { useSession, signOut } from "next-auth/react";
 import Link from "next/link";
 import Image from "next/image";
+import { Users } from "lucide-react";
+
 
 import {
   LayoutDashboard,
@@ -48,7 +50,7 @@ export default function AdminLayout({ children }) {
       icon: LayoutGrid,
       group: "Manage",
     },
-
+{ name: "Customers", href: "/admin/customers", icon: Users, group: "Manage" },
     { name: "Home", href: "/", icon: HomeIcon, group: "Other" },
   ];
 

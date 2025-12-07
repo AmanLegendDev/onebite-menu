@@ -87,10 +87,11 @@ export default function MenuClient({
     }
   }, [activeCategoryId]);
 
-  const tableLabel =
-    tableInfo?.name ||
-    (tableInfo?.number ? `Table ${tableInfo.number}` : null) ||
-    (recentOrder?.tableName || recentOrder?.table || null);
+const tableLabel =
+  tableInfo?.name ||
+  (tableInfo?.number ? `Table ${tableInfo.number}` : "Unrecognized Table");
+
+
 
   return (
     <div className="min-h-screen bg-[#050505] text-white pb-28">
@@ -344,12 +345,22 @@ export default function MenuClient({
           <p className="font-semibold text-yellow-200 text-base sm:text-lg">
             {totalQty} items • ₹{totalPrice}
           </p>
-          <button
-            onClick={() => router.push("/order-review")}
-            className="bg-yellow-400 text-black px-6 sm:px-8 py-2.5 rounded-full font-bold text-sm sm:text-base hover:bg-yellow-300 active:scale-95 transition shadow-lg"
-          >
-            Proceed →
-          </button>
+<button
+  onClick={() => {
+    if (tableLabel !== "Unrecognized Table") {
+      router.push("/order-review");
+    }
+  }}
+  disabled={tableLabel === "Unrecognized Table"}
+  className={`px-6 sm:px-8 py-2.5 rounded-full font-bold transition
+    ${tableLabel === "Unrecognized Table"
+      ? "bg-gray-700 text-gray-400 cursor-not-allowed"
+      : "bg-yellow-400 text-black hover:bg-yellow-300 active:scale-95"
+    }`}
+>
+  {tableLabel === "Unrecognized Table" ? "Scan Required" : "Proceed →"}
+</button>
+
         </div>
       )}
     </div>

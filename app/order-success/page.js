@@ -16,6 +16,17 @@ export default function OrderSuccessPage() {
     }
   }, []);
 
+  useEffect(() => {
+  const audio = new Audio("/notify.mp3");
+  audio.volume = 1;
+
+  // Play only once when page loads
+  audio.play().catch(() => {
+    console.warn("Sound blocked until user interaction");
+  });
+}, []);
+
+
   // 🔥 REAL-TIME ORDER STATUS FETCH
   useEffect(() => {
     if (!order?._id) return;
@@ -126,7 +137,8 @@ export default function OrderSuccessPage() {
 
         {/* TABLE */}
         <div className="mt-6 bg-yellow-400 text-black p-3 rounded-lg text-center font-extrabold text-lg shadow-md">
-          Table: {order.table || "--"}
+          Table: {order.table || "Unrecognized Table"}
+
         </div>
 
         {/* VIEW BILL BUTTON */}
