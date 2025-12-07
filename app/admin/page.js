@@ -1,4 +1,5 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
@@ -6,12 +7,14 @@ import {
   Utensils,
   ShoppingBag,
   ChevronRight,
+  Users,
 } from "lucide-react";
 
 export default function AdminDashboard() {
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
   const [orders, setOrders] = useState([]);
+  const [users, setUsers] = useState([]);
 
   async function loadCategories() {
     const res = await fetch("/api/categories");
@@ -31,10 +34,18 @@ export default function AdminDashboard() {
     setOrders(data.orders || []);
   }
 
+  // ✅ FIXED: correct endpoint for customer users
+  async function loadUsers() {
+    const res = await fetch("/api/customer-users", { cache: "no-store" });
+    const data = await res.json();
+    setUsers(data.users || []);
+  }
+
   useEffect(() => {
     loadCategories();
     loadItems();
     loadOrders();
+    loadUsers(); // 🚀 now it works!
   }, []);
 
   // 🔥 CARD COMPONENT
@@ -65,7 +76,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="pt-4">
-      {/* HEADER */}
       <div className="text-center mb-10">
         <h1 className="text-4xl font-bold text-white tracking-wide">
           Welcome, Admin 🔥
@@ -75,8 +85,8 @@ export default function AdminDashboard() {
         </p>
       </div>
 
-      {/* CARDS GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
+      {/* GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-7">
 
         <Card
           title="Categories"
@@ -102,16 +112,23 @@ export default function AdminDashboard() {
           color="from-[#1a1a1a] to-[#232323]"
         />
 
+        {/* ⭐ NOW WORKING */}
+        <Card
+          title="Customers"
+          count={users.length}
+          icon={Users}
+          href="/admin/customers"
+          color="from-[#181818] to-[#222]"
+        />
       </div>
 
-      {/* QUICK SHORTCUTS */}
+      {/* SHORTCUTS */}
       <div className="mt-14">
         <h3 className="text-lg font-semibold mb-4 text-gray-300">
           Quick Actions ⚡
         </h3>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-
           <Link href="/admin/orders">
             <div className="p-5 bg-[#121212] border border-[#222] rounded-xl hover:bg-[#181818] transition">
               <p className="text-xl font-semibold">View Active Orders</p>
@@ -132,7 +149,6 @@ export default function AdminDashboard() {
               <p className="text-sm text-gray-400 mt-1">Track per-table orders</p>
             </div>
           </Link>
-
         </div>
       </div>
     </div>

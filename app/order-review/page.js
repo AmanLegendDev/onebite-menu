@@ -48,7 +48,8 @@ export default function OrderReviewPage() {
   // 🔥 SAFE ORDER PLACE FUNCTION (zero double submit)
   async function placeOrder() {
     if (isSubmitting) return;     // 🛑 prevents multiple clicks
-    setIsSubmitting(true);        // ⏳ lock button
+    setIsSubmitting(true); 
+           // ⏳ lock button
 
     const baseTableName =
       autoTableInfo?.name ||
@@ -67,6 +68,16 @@ export default function OrderReviewPage() {
       note,
       createdAt: new Date(),
     };
+
+    await fetch("/api/customer-users/create-or-update", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: customer?.name,
+    phone: customer?.phone,
+  }),
+});
+
 
     try {
       const res = await fetch("/api/orders", {
