@@ -13,6 +13,7 @@ export default function OrderReviewPage() {
   const [note, setNote] = useState("");
   const [autoTableInfo, setAutoTableInfo] = useState(null);
   const [customer, setCustomer] = useState(null);
+  console.log(customer)
 
   // Fetch tableInfo
   useEffect(() => {

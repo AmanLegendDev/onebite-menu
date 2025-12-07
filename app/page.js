@@ -16,7 +16,7 @@ export default function HomePage() {
         className="flex flex-col items-center"
       >
         <Image
-          src="/onebite-2.jpg"
+          src="/onebite.jpeg"
           alt="OneBite Logo"
           width={160}
           height={160}

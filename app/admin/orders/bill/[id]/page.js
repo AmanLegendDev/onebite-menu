@@ -6,12 +6,12 @@ export default function BillPage({ params }) {
   const { id } = params;
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-
+console.log(order)
   // Fetch order by ID
   useEffect(() => {
     async function loadOrder() {
       try {
-        const res = await fetch(`/api/orders/${id}`, { cache: "no-store" });
+        const res = await fetch(`/api/orders/${id}`, { cache: "no-store" }) 
         const data = await res.json();
         setOrder(data.order);
       } catch (err) {

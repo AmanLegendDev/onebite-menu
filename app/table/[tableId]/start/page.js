@@ -62,7 +62,7 @@ useEffect(() => {
 
     localStorage.setItem("onebite_user", JSON.stringify(userData));
 
-    router.push(`/tables/${tableId}/menu`);
+    router.push(`/table/${tableId}/menu`);
   }
 
   return (

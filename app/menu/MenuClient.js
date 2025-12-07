@@ -101,7 +101,7 @@ export default function MenuClient({
           {/* Logo */}
           <div className="relative h-12 w-12 sm:h-14 sm:w-14 rounded-full overflow-hidden border border-yellow-400/80 shadow-[0_0_20px_rgba(248,197,55,0.4)] bg-black">
             <Image
-              src="/onebite-2.jpg"
+              src="/onebite.jpeg"
               alt="OneBite Logo"
               fill
               className="object-cover"

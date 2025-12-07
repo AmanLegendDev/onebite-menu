@@ -15,19 +15,17 @@ const OrderSchema = new mongoose.Schema(
     totalQty: Number,
     totalPrice: Number,
 
-    // OLD FIELD (keep for backward compatibility)
+    // OLD FIELD (backward compatibility)
     table: {
       type: String,
-      // required hata diya so old docs bhi safe
     },
 
-    // NEW: proper relation with Table model
+    // NEW: proper relation
     tableId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Table",
     },
 
-    // NEW: store display name (e.g. "Table 1")
     tableName: {
       type: String,
     },
@@ -47,8 +45,21 @@ const OrderSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // SESSION ID STORED
     customerSessionId: {
-  type: String,
+      type: String,
+    },
+
+    // ⭐ ADD THESE 2 FIELDS ⭐
+    customerName: {
+      type: String,
+      default: "",
+    },
+
+    customerPhone: {
+      type: String,
+      default: "",
     },
   },
   { timestamps: true }

@@ -25,6 +25,9 @@ export async function POST(req) {
   try {
     await connectDB();
     const body = await req.json();
+    console.log("BODY FROM FRONTEND:", body);
+console.log("ORDER WILL SAVE AS:", orderData);
+
 
     const { name, number } = body;
 
