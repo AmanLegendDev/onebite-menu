@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";   // ✅ MAGIC LINE – FIXES VERCEL ISSUE
+
 import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Order from "@/models/Orders";
@@ -12,10 +14,10 @@ export async function GET(req) {
 
     const skip = (page - 1) * limit;
 
-    // FIXED: Show ALL orders (pending + served) sorted latest → oldest
+    // Fetch ALL orders: pending + served
     const [orders, totalCount] = await Promise.all([
       Order.find({})
-        .sort({ createdAt: -1 })   // IMPORTANT FIX
+        .sort({ createdAt: -1 })   // Latest first
         .skip(skip)
         .limit(limit)
         .lean(),
@@ -32,6 +34,7 @@ export async function GET(req) {
       page,
       limit,
     });
+
   } catch (err) {
     console.error("Paginated Orders Error:", err);
     return NextResponse.json(
