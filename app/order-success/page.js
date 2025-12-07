@@ -26,9 +26,9 @@ export default function OrderSuccessPage() {
 
       {/* LOGO */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.6, ease: "easeOut" }}
+        initial={{ scale: 0, rotate: -180, opacity: 0 }}
+          animate={{ scale: 1, rotate: 0, opacity: 1 }}
+          transition={{ duration: 0.7, type: "spring" }}
         className="flex justify-center"
       >
         <img
@@ -39,14 +39,7 @@ export default function OrderSuccessPage() {
 
       {/* SUCCESS BADGE */}
       <div className="text-center mt-6">
-        <motion.div
-          initial={{ scale: 0, rotate: -180, opacity: 0 }}
-          animate={{ scale: 1, rotate: 0, opacity: 1 }}
-          transition={{ duration: 0.7, type: "spring" }}
-          className="w-28 h-28 bg-[#22C55E] text-white rounded-full flex items-center justify-center mx-auto text-6xl font-bold shadow-[0_0_25px_rgba(34,197,94,0.6)]"
-        >
-          ✓
-        </motion.div>
+        
 
         <h1 className="text-4xl font-extrabold mt-6 tracking-wide text-yellow-400">
           Order Confirmed!

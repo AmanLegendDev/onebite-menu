@@ -4,11 +4,12 @@ import Order from "@/models/Orders";
 
 
 
+
 export async function GET(req, { params }) {
   try {
     await connectDB();
 
-    let order = await Order.findById(params.id).lean();
+    const order = await Order.findById(params.id).lean();
 
     if (!order) {
       return NextResponse.json(
@@ -17,16 +18,10 @@ export async function GET(req, { params }) {
       );
     }
 
-    // ⭐ ENSURE CUSTOMER FIELDS ALWAYS EXIST ⭐
-    order.customerName = order.customerName || "";
-    order.customerPhone = order.customerPhone || "";
-    order.customerSessionId = order.customerSessionId || "";
-
     return NextResponse.json(
       { success: true, order },
       { status: 200 }
     );
-
   } catch (err) {
     console.log("GET Order Error:", err);
     return NextResponse.json(
@@ -35,7 +30,6 @@ export async function GET(req, { params }) {
     );
   }
 }
-
 
 
 export async function PUT(req, { params }) {

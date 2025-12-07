@@ -123,7 +123,7 @@ export default function AdminOrdersPage() {
         {/* Table Name */}
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-[#ff6a3d]">
-            Table {o.tableName || o.table}
+            {o.tableName || o.table}
           </h2>
 
           {!o.seenByAdmin && (
@@ -219,7 +219,7 @@ export default function AdminOrdersPage() {
             </button>
 
             <h2 className="text-2xl font-bold text-[#ff6a3d] mb-2">
-              Table {selectedOrder.table}
+              {selectedOrder.table}
             </h2>
 
             <p className="text-gray-400 text-xs mb-4">

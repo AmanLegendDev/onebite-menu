@@ -77,7 +77,7 @@ export default function OrdersHistoryPage() {
         {/* Table + Status */}
         <div className="flex justify-between items-center mb-2">
           <h2 className="text-xl font-bold text-[#ff6a3d]">
-            Table {o.tableName || o.table}
+            {o.tableName || o.table}
           </h2>
 
           {isCompleted ? (
@@ -180,7 +180,7 @@ export default function OrdersHistoryPage() {
             </button>
 
             <h2 className="text-2xl font-bold text-[#ff6a3d] mb-1">
-              Table {selectedOrder.tableName || selectedOrder.table}
+              {selectedOrder.tableName || selectedOrder.table}
             </h2>
 
             <p className="text-gray-400 text-xs mb-3">

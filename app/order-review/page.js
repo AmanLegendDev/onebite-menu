@@ -13,9 +13,9 @@ export default function OrderReviewPage() {
   const [note, setNote] = useState("");
   const [autoTableInfo, setAutoTableInfo] = useState(null);
   const [customer, setCustomer] = useState(null);
-  console.log(customer)
+  const [isSubmitting, setIsSubmitting] = useState(false); // 🔥 prevents double orders
 
-  // Fetch tableInfo
+  // Fetch tableInfo + customer
   useEffect(() => {
     if (typeof window === "undefined") return;
 
@@ -45,8 +45,11 @@ export default function OrderReviewPage() {
   const totalQty = finalCart.reduce((s, i) => s + i.qty, 0);
   const totalPrice = finalCart.reduce((s, i) => s + i.qty * i.price, 0);
 
-  // Place order
+  // 🔥 SAFE ORDER PLACE FUNCTION (zero double submit)
   async function placeOrder() {
+    if (isSubmitting) return;     // 🛑 prevents multiple clicks
+    setIsSubmitting(true);        // ⏳ lock button
+
     const baseTableName =
       autoTableInfo?.name ||
       (autoTableInfo?.number ? `Table ${autoTableInfo.number}` : null);
@@ -65,25 +68,31 @@ export default function OrderReviewPage() {
       createdAt: new Date(),
     };
 
-    const res = await fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(orderData),
-    });
+    try {
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(orderData),
+      });
 
-    const data = await res.json();
+      const data = await res.json();
 
-    if (data.success) {
-      localStorage.setItem(
-        "latestOrder",
-        JSON.stringify({ ...orderData, _id: data.order._id })
-      );
+      if (data.success) {
+        localStorage.setItem(
+          "latestOrder",
+          JSON.stringify({ ...orderData, _id: data.order._id })
+        );
 
-      if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
+        if (navigator.vibrate) navigator.vibrate([100, 60, 100]);
 
-      router.replace("/order-success");
-    } else {
-      alert("Order failed. Try again!");
+        router.replace("/order-success");
+      } else {
+        alert("Order failed. Try again!");
+        setIsSubmitting(false);
+      }
+    } catch (err) {
+      alert("Network error!");
+      setIsSubmitting(false);
     }
   }
 
@@ -178,9 +187,14 @@ export default function OrderReviewPage() {
 
         <button
           onClick={placeOrder}
-          className="bg-yellow-400 text-black px-7 py-2.5 rounded-full font-bold hover:bg-yellow-300 active:scale-95 transition"
+          disabled={isSubmitting}
+          className={`px-7 py-2.5 rounded-full font-bold transition active:scale-95 
+            ${isSubmitting 
+              ? "bg-gray-500 text-black cursor-not-allowed" 
+              : "bg-yellow-400 text-black hover:bg-yellow-300"
+            }`}
         >
-          Confirm Order →
+          {isSubmitting ? "Confirming..." : "Confirm Order →"}
         </button>
       </div>
     </div>

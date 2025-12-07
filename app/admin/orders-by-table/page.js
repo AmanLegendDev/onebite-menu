@@ -91,7 +91,7 @@ export default function OrdersByTablePage() {
               )}
 
               <h2 className="text-xl font-bold text-[#ff6a3d]">
-                Table {group.tableName}
+                {group.tableName}
               </h2>
 
               <p className="text-gray-400 text-sm">
@@ -167,7 +167,7 @@ export default function OrdersByTablePage() {
             </button>
 
             <h2 className="text-2xl font-bold text-[#ff6a3d] mb-4">
-              Table {modalTable.tableName} — Orders
+              {modalTable.tableName} — Orders
             </h2>
 
             <div className="max-h-[350px] overflow-y-auto space-y-4">

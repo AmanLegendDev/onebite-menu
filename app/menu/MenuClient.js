@@ -263,9 +263,9 @@ export default function MenuClient({
                             {item.name}
                           </h3>
 
-                          <p className="text-gray-400 text-xs sm:text-sm mt-1 min-h-[38px] line-clamp-2">
-                            {item.description}
-                          </p>
+                        <p className="text-gray-400 text-xs sm:text-sm mt-1 line-clamp-2 overflow-hidden">
+  {item.description}
+</p>
 
                           {/* QTY CONTROL */}
                           <div className="flex items-center justify-center gap-4 mt-4">
