@@ -2,16 +2,37 @@
 
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
-import { useCart } from "../context/CartContext";
 
 export default function OrderSuccessPage() {
-  const { clearCart } = useCart();
   const [order, setOrder] = useState(null);
+  const [liveStatus, setLiveStatus] = useState("pending");
 
   useEffect(() => {
     const savedOrder = localStorage.getItem("latestOrder");
-    if (savedOrder) setOrder(JSON.parse(savedOrder));
+    if (savedOrder) {
+      const parsed = JSON.parse(savedOrder);
+      setOrder(parsed);
+      setLiveStatus(parsed.status || "pending");
+    }
   }, []);
+
+  // 🔥 REAL-TIME ORDER STATUS FETCH
+  useEffect(() => {
+    if (!order?._id) return;
+
+    const interval = setInterval(async () => {
+      const res = await fetch(`/api/orders/${order._id}`, {
+        cache: "no-store",
+      });
+      const data = await res.json();
+
+      if (data?.order?.status) {
+        setLiveStatus(data.order.status);
+      }
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [order]);
 
   if (!order) {
     return (
@@ -21,14 +42,30 @@ export default function OrderSuccessPage() {
     );
   }
 
+  // STATUS DISPLAY TEXT
+  const statusText = {
+    pending: "Your order is waiting to be accepted…",
+    preparing: "Your order is now being prepared 🔥",
+    ready: "Your order is ready to be served! 😍",
+    served: "Enjoy your meal! 🍽️",
+  };
+
+  // STATUS COLOR
+  const statusColor = {
+    pending: "text-yellow-300",
+    preparing: "text-orange-400",
+    ready: "text-green-400",
+    served: "text-blue-400",
+  };
+
   return (
     <div className="min-h-screen bg-[#0d0d0d] px-6 py-10 text-white">
 
       {/* LOGO */}
       <motion.div
         initial={{ scale: 0, rotate: -180, opacity: 0 }}
-          animate={{ scale: 1, rotate: 0, opacity: 1 }}
-          transition={{ duration: 0.7, type: "spring" }}
+        animate={{ scale: 1, rotate: 0, opacity: 1 }}
+        transition={{ duration: 0.7, type: "spring" }}
         className="flex justify-center"
       >
         <img
@@ -37,15 +74,14 @@ export default function OrderSuccessPage() {
         />
       </motion.div>
 
-      {/* SUCCESS BADGE */}
+      {/* STATUS */}
       <div className="text-center mt-6">
-        
-
-        <h1 className="text-4xl font-extrabold mt-6 tracking-wide text-yellow-400">
-          Order Confirmed!
+        <h1 className="text-3xl font-extrabold tracking-wide text-yellow-400">
+          Order Confirmed 🎉
         </h1>
-        <p className="text-gray-400 mt-2 text-sm">
-          We’re preparing your order… sit back & relax 😋🔥
+
+        <p className={`mt-2 text-sm font-semibold ${statusColor[liveStatus]}`}>
+          {statusText[liveStatus]}
         </p>
       </div>
 
@@ -90,13 +126,8 @@ export default function OrderSuccessPage() {
 
         {/* TABLE */}
         <div className="mt-6 bg-yellow-400 text-black p-3 rounded-lg text-center font-extrabold text-lg shadow-md">
-          Table: {order.table}
+          Table: {order.table || "--"}
         </div>
-
-        {/* TIME */}
-        <p className="text-center text-gray-400 text-xs mt-4">
-          {new Date(order.createdAt).toLocaleString()}
-        </p>
 
         {/* VIEW BILL BUTTON */}
         <button
@@ -105,13 +136,23 @@ export default function OrderSuccessPage() {
         >
           View Detailed Bill →
         </button>
+
+        {/* DATE */}
+        <p className="text-center text-gray-500 text-xs mt-4">
+          {new Date(order.createdAt).toLocaleString()}
+        </p>
       </motion.div>
 
+      {/* FOOTER */}
+      <div className="mt-12 text-center opacity-70">
+        <p className="text-xs">Made with ❤️ by Aman</p>
+        <p className="text-[10px] text-gray-500">© OneBite Menu System</p>
+      </div>
+
       {/* BACK TO MENU */}
-      <div className="mt-12 text-center">
+      <div className="mt-8 text-center">
         <button
           onClick={() => {
-            clearCart();
             window.location.href = "/menu";
           }}
           className="bg-yellow-400 hover:bg-yellow-300 px-10 py-3 rounded-full text-lg font-bold text-black shadow-[0_0_20px_rgba(255,177,0,0.4)] active:scale-95 transition"

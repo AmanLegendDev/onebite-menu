@@ -40,6 +40,9 @@ const OrderSchema = new mongoose.Schema(
       enum: ["pending", "preparing", "ready", "served"],
       default: "pending",
     },
+     completedAt: {
+      type: Date,
+    },  
 
     seenByAdmin: {
       type: Boolean,

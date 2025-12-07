@@ -12,10 +12,7 @@ export default function OrdersByTablePage() {
     try {
       const res = await fetch("/api/orders/by-table", { cache: "no-store" });
       const data = await res.json();
-
-      if (data.success) {
-        setGroups(data.groups);
-      }
+      if (data.success) setGroups(data.groups);
     } catch (err) {
       console.error(err);
     }
@@ -37,7 +34,6 @@ export default function OrdersByTablePage() {
 
   const entries = Object.entries(groups);
 
-  // TIME DIFFERENCE
   function timeAgo(dateStr) {
     const diff = (Date.now() - new Date(dateStr)) / 1000;
     if (diff < 60) return `${Math.floor(diff)}s`;
@@ -45,21 +41,27 @@ export default function OrdersByTablePage() {
     return `${Math.floor(diff / 3600)}h`;
   }
 
-  // STATUS COLORS
+  // COLORS
   const statusColors = {
+    pending: "bg-green-600",
     new: "bg-green-600",
     preparing: "bg-yellow-500",
     ready: "bg-blue-600",
     served: "bg-gray-600",
   };
 
-  // Update Status
+  // UPDATE STATUS + AUTO CLOSE MODAL
   async function updateStatus(orderId, status) {
     await fetch(`/api/orders/update-status/${orderId}`, {
       method: "PUT",
       body: JSON.stringify({ status }),
     });
-    loadTableOrders();
+
+    // Refresh cards
+    await loadTableOrders();
+
+    // Auto close modal → instant UX
+    setModalTable(null);
   }
 
   return (
@@ -71,19 +73,22 @@ export default function OrdersByTablePage() {
         <p className="text-gray-500">No active orders.</p>
       )}
 
+      {/* TABLE CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {entries.map(([key, group], index) => {
           const orders = group.orders;
           const latest = orders[0];
-          const statusColor =
-            statusColors[latest.status] || "bg-gray-700";
+
+          // 🔥 NEW → Multiple statuses summary
+          const statusSummary = [
+            ...new Set(orders.map((o) => o.status.toUpperCase())),
+          ].join(" • ");
 
           return (
             <div
               key={index}
               className="bg-[#111] rounded-xl shadow-lg border border-gray-800 p-5 hover:border-[#ff6a3d] transition relative"
             >
-              {/* NEW BADGE */}
               {!latest.seenByAdmin && (
                 <span className="absolute right-3 top-3 bg-green-500 px-2 py-1 rounded text-xs text-white animate-pulse">
                   NEW
@@ -94,15 +99,13 @@ export default function OrdersByTablePage() {
                 {group.tableName}
               </h2>
 
-              <p className="text-gray-400 text-sm">
-                Customer:{" "}
-                <b className="text-white">
-                  {latest.customerName || "—"}
-                </b>
-              </p>
-
               <p className="text-gray-500 mt-1">
                 {orders.length} active order(s)
+              </p>
+
+              {/* Status Summary */}
+              <p className="text-sm text-gray-300 mt-2">
+                Status: <b className="text-white">{statusSummary}</b>
               </p>
 
               <div className="mt-4">
@@ -112,38 +115,6 @@ export default function OrdersByTablePage() {
                 </p>
               </div>
 
-              {/* STATUS BADGE */}
-              <div
-                className={`inline-block mt-3 px-3 py-1 text-sm rounded-full text-white ${statusColor}`}
-              >
-                {latest.status.toUpperCase()}
-              </div>
-
-              {/* quick actions */}
-              <div className="mt-5 flex flex-wrap gap-2">
-                <button
-                  onClick={() => updateStatus(latest._id, "preparing")}
-                  className="bg-yellow-600 px-3 py-2 rounded-lg text-xs"
-                >
-                  Mark Preparing
-                </button>
-
-                <button
-                  onClick={() => updateStatus(latest._id, "ready")}
-                  className="bg-blue-600 px-3 py-2 rounded-lg text-xs"
-                >
-                  Mark Ready
-                </button>
-
-                <button
-                  onClick={() => updateStatus(latest._id, "served")}
-                  className="bg-green-700 px-3 py-2 rounded-lg text-xs"
-                >
-                  Mark Served
-                </button>
-              </div>
-
-              {/* ACTION BUTTON */}
               <button
                 onClick={() => setModalTable(group)}
                 className="mt-5 w-full bg-[#ff6a3d] py-2 rounded-lg font-semibold"
@@ -155,7 +126,7 @@ export default function OrdersByTablePage() {
         })}
       </div>
 
-      {/* MODAL (All orders of table) */}
+      {/* MODAL WITH INDIVIDUAL ORDER CONTROL */}
       {modalTable && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
           <div className="bg-[#111] p-6 rounded-xl border border-gray-800 w-full max-w-lg relative">
@@ -171,29 +142,63 @@ export default function OrdersByTablePage() {
             </h2>
 
             <div className="max-h-[350px] overflow-y-auto space-y-4">
-              {modalTable.orders.map((o) => (
-                <div
-                  key={o._id}
-                  className="bg-[#1b1b1b] p-4 rounded-lg border border-gray-700"
-                >
-                  <p className="text-sm text-gray-400 mb-1">
-                    {new Date(o.createdAt).toLocaleString()}
-                  </p>
+              {modalTable.orders.map((o) => {
+                const color = statusColors[o.status] || "bg-gray-700";
 
-                  <p className="font-bold text-white">₹{o.totalPrice}</p>
-
-                  <p className="text-gray-300 text-sm mt-1">
-                    {o.items.length} items
-                  </p>
-
-                  <Link
-                    href={`/admin/orders/bill/${o._id}`}
-                    className="text-blue-400 underline text-sm mt-2 inline-block"
+                return (
+                  <div
+                    key={o._id}
+                    className="bg-[#1b1b1b] p-4 rounded-lg border border-gray-700"
                   >
-                    View Bill →
-                  </Link>
-                </div>
-              ))}
+                    <div className="flex justify-between">
+                      <p className="font-bold text-white">
+                        Order #{o._id.slice(-4)}
+                      </p>
+                      <span
+                        className={`px-3 py-1 text-xs rounded-full text-white ${color}`}
+                      >
+                        {o.status.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <p className="text-sm text-gray-400">
+                      {new Date(o.createdAt).toLocaleString()}
+                    </p>
+
+                    <p className="font-bold text-lg mt-1">₹{o.totalPrice}</p>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        onClick={() => updateStatus(o._id, "preparing")}
+                        className="bg-yellow-600 px-3 py-2 rounded-lg text-xs"
+                      >
+                        Mark Preparing
+                      </button>
+
+                      <button
+                        onClick={() => updateStatus(o._id, "ready")}
+                        className="bg-blue-600 px-3 py-2 rounded-lg text-xs"
+                      >
+                        Mark Ready
+                      </button>
+
+                      <button
+                        onClick={() => updateStatus(o._id, "served")}
+                        className="bg-green-700 px-3 py-2 rounded-lg text-xs"
+                      >
+                        Mark Served
+                      </button>
+
+                      <Link
+                        href={`/admin/orders/bill/${o._id}`}
+                        className="text-blue-400 underline text-xs ml-auto"
+                      >
+                        View Bill →
+                      </Link>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
 
             <button
