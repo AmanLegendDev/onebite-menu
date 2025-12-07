@@ -2,13 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import {
-  Receipt,
-  Timer,
-  Trash2,
-  ArrowRight,
-  CheckSquare,
-} from "lucide-react";
+import { Receipt, Timer, Trash2, ArrowRight } from "lucide-react";
 
 export default function AdminOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -17,11 +11,11 @@ export default function AdminOrdersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // -----------------------------------------------------
-  // 🔥 REALTIME POLLING
+  // 🔥 REALTIME REFRESH — Every 1 second
   // -----------------------------------------------------
   useEffect(() => {
     loadOrders();
-    const interval = setInterval(() => loadOrders(), 1000);
+    const interval = setInterval(loadOrders, 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -33,7 +27,7 @@ export default function AdminOrdersPage() {
 
       const data = await res.json();
 
-      if (data.orders && data.orders.length > 0) {
+      if (data.orders?.length) {
         const active = data.orders.filter((o) => o.status !== "served");
         setOrders(active);
       }
@@ -57,54 +51,39 @@ export default function AdminOrdersPage() {
   }
 
   // -----------------------------------------------------
-  // MARK AS SEEN
+  // MARK ORDER AS SEEN (NEW badge remove)
   // -----------------------------------------------------
   async function markSeen(id) {
     try {
       await fetch(`/api/orders/seen/${id}`, { method: "PUT" });
-    } catch (err) {}
+    } catch (err) {
+      console.log("Seen update failed:", err);
+    }
   }
 
   // -----------------------------------------------------
-  // GROUPING LOGIC
+  // STATUS COLORS
   // -----------------------------------------------------
-  function groupOrders(list) {
-    const today = [];
-    const yesterday = [];
-    const older = [];
-
-    const now = new Date();
-    const d = now.getDate(), m = now.getMonth(), y = now.getFullYear();
-
-    list.forEach((o) => {
-      const dt = new Date(o.createdAt);
-      if (dt.getDate() === d && dt.getMonth() === m && dt.getFullYear() === y)
-        today.push(o);
-      else if (dt.getDate() === d - 1) yesterday.push(o);
-      else older.push(o);
-    });
-
-    return { today, yesterday, older };
-  }
-
-  const { today, yesterday, older } = groupOrders(orders);
+  const statusColors = {
+    pending: "bg-yellow-600",
+    preparing: "bg-orange-600",
+    ready: "bg-blue-600",
+  };
 
   // -----------------------------------------------------
-  // 🔥 ORDER CARD UI (BEAST MODE)
+  // ORDER CARD UI
   // -----------------------------------------------------
   function OrderCard({ o }) {
     return (
       <div
         onClick={() => {
           setSelectedOrder(o);
-          if (!o.seenByAdmin) markSeen(o._id);
+          if (!o.seenByAdmin) markSeen(o._id); // 👈 NEW BADGE REMOVE
         }}
         className={`relative bg-[#0e0e0e] border rounded-xl p-6 shadow-xl cursor-pointer 
-          transition hover:-translate-y-1 hover:border-[#ff6a3d]
-          ${!o.seenByAdmin ? "border-green-700" : "border-[#222]"}
-        `}
+          transition hover:-translate-y-1 hover:border-[#ff6a3d]`}
       >
-        {/* Delete */}
+        {/* DELETE */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -115,29 +94,37 @@ export default function AdminOrdersPage() {
           <Trash2 size={20} />
         </button>
 
-        {/* Time */}
+        {/* NEW BADGE */}
+        {!o.seenByAdmin && (
+          <span className="absolute top-3 left-3 bg-green-600 text-white px-3 py-1 rounded-full text-xs animate-pulse">
+            NEW
+          </span>
+        )}
+
+        {/* TIME */}
         <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
           <Timer size={14} /> {new Date(o.createdAt).toLocaleString()}
         </p>
 
-        {/* Table Name */}
+        {/* TABLE */}
         <div className="flex justify-between items-center">
           <h2 className="text-2xl font-bold text-[#ff6a3d]">
             {o.tableName || o.table}
           </h2>
 
-          {!o.seenByAdmin && (
-            <span className="bg-green-600 text-white text-xs font-semibold px-3 py-1 rounded-full animate-pulse">
-              NEW
-            </span>
-          )}
+          {/* STATUS BADGE */}
+          <span
+            className={`px-3 py-1 rounded-full text-xs text-white ${statusColors[o.status]}`}
+          >
+            {o.status.toUpperCase()}
+          </span>
         </div>
 
-        {/* Items & Price */}
+        {/* ITEMS + PRICE */}
         <p className="text-gray-300 mt-3">{o.totalQty} items</p>
         <p className="text-xl font-bold mt-1 text-white">₹{o.totalPrice}</p>
 
-        {/* Bill Button */}
+        {/* BILL BUTTON */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -157,136 +144,120 @@ export default function AdminOrdersPage() {
   return (
     <div className="p-6 text-white">
       <h1 className="text-4xl font-extrabold mb-2">Orders</h1>
-      <p className="text-gray-400 mb-8">Realtime order management</p>
+      <p className="text-gray-400 mb-8">Live status updates from kitchen</p>
 
-      {loading && <p className="text-center text-gray-400">Loading...</p>}
+      {loading && <p className="text-center text-gray-400">Loading…</p>}
 
-      {/* GROUPS */}
-      {today.length > 0 && (
-        <>
-          <h2 className="text-2xl font-bold mb-3">Today</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
-            {today.map((o) => (
-              <OrderCard o={o} key={o._id} />
-            ))}
-          </div>
-        </>
+      {orders.length === 0 && (
+        <p className="text-center text-gray-500 py-10 text-lg">
+          No active orders
+        </p>
       )}
 
-      {yesterday.length > 0 && (
-        <>
-          <h2 className="text-xl font-bold mb-3">Yesterday</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
-            {yesterday.map((o) => (
-              <OrderCard o={o} key={o._id} />
-            ))}
-          </div>
-        </>
-      )}
-
-      {older.length > 0 && (
-        <>
-          <h2 className="text-xl font-bold mb-3">Older</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {older.map((o) => (
-              <OrderCard o={o} key={o._id} />
-            ))}
-          </div>
-        </>
-      )}
+      {/* GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {orders.map((o) => (
+          <OrderCard key={o._id} o={o} />
+        ))}
+      </div>
 
       {/* VIEW HISTORY */}
       <div className="mt-14 flex justify-center">
         <Link
           href="/admin/orders/history"
-          className="px-6 py-3 rounded-xl border border-gray-700 bg-[#111] hover:bg-[#1a1a1a] text-sm font-semibold text-gray-200 flex items-center gap-2"
+          className="px-6 py-3 rounded-xl border border-gray-700 bg-[#111] hover:bg-[#1a1a1a] text-sm font-semibold flex items-center gap-2"
         >
           View Full Order History <ArrowRight size={16} />
         </Link>
       </div>
 
-      {/* ------------------------------- */}
-      {/* 🔥 ORDER DETAILS MODAL */}
-      {/* ------------------------------- */}
+      {/* --------------------------------------------- */}
+      {/* ORDER DETAILS MODAL                           */}
+      {/* --------------------------------------------- */}
       {selectedOrder && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur flex items-center justify-center z-50">
-          <div className="bg-[#0f0f0f] rounded-2xl w-[90%] max-w-lg p-6 border border-[#222] shadow-2xl relative">
+          <div className="bg-[#0f0f0f] rounded-2xl w-[90%] max-w-lg p-6 border border-[#222] shadow-xl relative">
+
             <button
               onClick={() => setSelectedOrder(null)}
-              className="absolute top-4 right-4 text-gray-400 text-2xl hover:text-white"
+              className="absolute top-4 right-4 text-gray-400 text-2xl"
             >
               ×
             </button>
 
-            <h2 className="text-2xl font-bold text-[#ff6a3d] mb-2">
-              {selectedOrder.table}
+            <h2 className="text-2xl font-bold text-[#ff6a3d]">
+              {selectedOrder.tableName}
             </h2>
 
-            <p className="text-gray-400 text-xs mb-4">
+            <p className="text-xs text-gray-400 mb-3">
               {new Date(selectedOrder.createdAt).toLocaleString()}
             </p>
 
-            <div className="max-h-64 overflow-y-auto pr-2 custom-scroll space-y-3">
-              {selectedOrder.items.map((item) => (
+            {/* STATUS */}
+            <span
+              className={`px-3 py-1 rounded-full text-xs text-white ${statusColors[selectedOrder.status]}`}
+            >
+              {selectedOrder.status.toUpperCase()}
+            </span>
+
+            {/* ITEMS */}
+            <div className="max-h-64 overflow-y-auto mt-5 space-y-3">
+              {selectedOrder.items.map((i) => (
                 <div
-                  key={item._id}
+                  key={i._id}
                   className="flex justify-between border-b border-gray-800 pb-2"
                 >
                   <div>
-                    <p className="font-semibold text-white">{item.name}</p>
-                    <p className="text-gray-500 text-xs">
-                      {item.qty} × ₹{item.price}
+                    <p className="font-bold">{i.name}</p>
+                    <p className="text-xs text-gray-500">
+                      {i.qty} × ₹{i.price}
                     </p>
                   </div>
-
                   <p className="font-bold text-[#ff6a3d]">
-                    ₹{item.qty * item.price}
+                    ₹{i.qty * i.price}
                   </p>
                 </div>
               ))}
             </div>
 
+            {/* NOTE */}
             {selectedOrder.note && (
-              <p className="mt-4 p-3 bg-[#1a1a1a] rounded-xl text-gray-300 text-sm">
-                <span className="font-semibold text-white">Note:</span>{" "}
+              <p className="mt-4 bg-[#1a1a1a] p-3 rounded-xl text-sm text-gray-300">
+                <span className="font-semibold">Note: </span>
                 {selectedOrder.note}
               </p>
             )}
 
+            {/* TOTAL */}
             <div className="flex justify-between text-xl font-bold mt-6">
               <p>Total</p>
               <p>₹{selectedOrder.totalPrice}</p>
             </div>
 
+            {/* BILL BUTTON */}
             <button
-              onClick={async () => {
-                await fetch(`/api/orders/complete/${selectedOrder._id}`, {
-                  method: "PUT",
-                });
-                await loadOrders();
-                setSelectedOrder(null);
-              }}
-              className="w-full mt-6 bg-green-600 py-3 rounded-xl text-white text-lg font-semibold flex items-center justify-center gap-2 hover:bg-green-700"
+              onClick={() =>
+                (window.location.href = `/admin/orders/bill/${selectedOrder._id}`)
+              }
+              className="mt-6 w-full bg-[#ff6a3d] py-3 rounded-xl text-white text-sm font-bold hover:bg-[#ff7c57]"
             >
-              <CheckSquare size={20} /> Mark as Completed
+              View Bill →
             </button>
           </div>
         </div>
       )}
 
-      {/* ------------------------------- */}
-      {/* DELETE CONFIRM MODAL */}
-      {/* ------------------------------- */}
+      {/* DELETE MODAL */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur flex items-center justify-center z-50">
-          <div className="bg-[#0f0f0f] rounded-2xl w-[90%] max-w-sm p-6 border border-red-700/40 shadow-2xl">
+          <div className="bg-[#0f0f0f] rounded-2xl w-[90%] max-w-sm p-6 border border-red-700/40 shadow-xl">
             <h2 className="text-xl font-bold text-red-500 mb-3">
               Delete Order?
             </h2>
 
             <p className="text-gray-300 mb-6">
-              Confirm delete order from{" "}
-              <span className="font-semibold">Table {deleteConfirm.table}</span>?
+              Delete order from{" "}
+              <span className="font-semibold">{deleteConfirm.table}</span>?
             </p>
 
             <div className="flex gap-3">
@@ -296,7 +267,6 @@ export default function AdminOrdersPage() {
               >
                 Delete
               </button>
-
               <button
                 onClick={() => setDeleteConfirm(null)}
                 className="flex-1 bg-gray-700 py-2 rounded-lg text-white font-semibold"
@@ -307,7 +277,6 @@ export default function AdminOrdersPage() {
           </div>
         </div>
       )}
-
     </div>
   );
 }
