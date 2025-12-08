@@ -42,3 +42,37 @@ export async function GET() {
     );
   }
 }
+
+
+
+
+export async function POST(req) {
+  try {
+    await connectDB();
+    const { phone, amount, type, maxDiscount, code, note } = await req.json();
+
+    if (!phone || !amount) {
+      return NextResponse.json({ success: false, message: "Invalid data" });
+    }
+
+    const user = await CustomerUser.findOneAndUpdate(
+      { phone },
+      {
+        $set: {
+          "coupon.active": true,
+          "coupon.amount": amount,
+          "coupon.type": type || "flat",
+          "coupon.maxDiscount": type === "percent" ? maxDiscount : null,
+          "coupon.code": code || null,
+          "coupon.note": note || "",
+        },
+      },
+      { new: true, upsert: true }
+    );
+
+    return NextResponse.json({ success: true, coupon: user.coupon });
+  } catch (e) {
+    console.log("COUPON SAVE ERROR:", e);
+    return NextResponse.json({ success: false });
+  }
+}

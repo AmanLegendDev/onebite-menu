@@ -24,11 +24,11 @@ export async function POST(req) {
         name,
         phone,
         joinDate: new Date(),
-        totalKOT: 1,
+        
       });
     } else {
       // Update KOT count and name if changed
-      user.totalKOT += 1;
+     
       if (name && user.name !== name) {
         user.name = name;
       }

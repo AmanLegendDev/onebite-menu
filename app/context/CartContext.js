@@ -7,7 +7,9 @@ const CartContext = createContext();
 export function CartProvider({ children }) {
   const [cart, setCart] = useState([]);
 
+  // ----------------------------------
   // 🔥 LOAD FROM LOCAL STORAGE (ONCE)
+  // ----------------------------------
   useEffect(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("cart_data");
@@ -24,22 +26,25 @@ export function CartProvider({ children }) {
     }
   }, []);
 
+  // ----------------------------------
   // 🔥 SAVE TO LOCAL STORAGE (EVERY CHANGE)
+  // ----------------------------------
   useEffect(() => {
     if (typeof window !== "undefined") {
       localStorage.setItem("cart_data", JSON.stringify(cart));
     }
   }, [cart]);
 
-  // ---------------------------
+  // ----------------------------------
   // METHODS
-  // ---------------------------
+  // ----------------------------------
 
+  // ➕ Add to cart
   function addToCart(item) {
     setCart((prev) => {
-      const existingItem = prev.find((p) => p._id === item._id);
+      const existing = prev.find((p) => p._id === item._id);
 
-      if (existingItem) {
+      if (existing) {
         return prev.map((p) =>
           p._id === item._id ? { ...p, qty: p.qty + 1 } : p
         );
@@ -49,10 +54,12 @@ export function CartProvider({ children }) {
     });
   }
 
+  // ❌ Remove entire item
   function removeFromCart(id) {
     setCart((prev) => prev.filter((item) => item._id !== id));
   }
 
+  // 🔼 Increase qty
   function increaseQty(id) {
     setCart((prev) =>
       prev.map((item) =>
@@ -61,27 +68,29 @@ export function CartProvider({ children }) {
     );
   }
 
+  // 🔽 Decrease qty — FULLY FIXED
   function decreaseQty(id) {
     setCart((prev) =>
       prev
-        .map((item) =>
-          item._id === id && item.qty > 0
-            ? { ...item, qty: item.qty - 1 }
-            : item
-        )
-        .filter((i) => i.qty > 0)
+        .map((item) => {
+          if (item._id === id) {
+            const newQty = item.qty - 1;
+            return { ...item, qty: newQty };
+          }
+          return item;
+        })
+        .filter((i) => i.qty > 0) // qty===0 → remove
     );
   }
 
-function clearCart() {
-  setCart([]);
+  // 🧹 Clear entire cart
+  function clearCart() {
+    setCart([]);
 
-  if (typeof window !== "undefined") {
-   
-    localStorage.removeItem("cartItems");   // 🔥 second key phone/Vercel uses
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("cart_data"); // correct key
+    }
   }
-}
-
 
   return (
     <CartContext.Provider

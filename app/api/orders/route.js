@@ -58,6 +58,14 @@ export async function POST(req) {
       customerSessionId: sessionId || "",
     };
 
+     if (orderData.discount == null) {
+      orderData.discount = 0;
+    }
+
+    if (!orderData.finalPrice || orderData.finalPrice <= 0) {
+      orderData.finalPrice = orderData.totalPrice;
+    }
+
     // 🔥 DEBUG LOG #3 — Order save hone se pehle data kaisa hai?
     console.log("📌 FINAL ORDER DATA TO BE SAVED:", orderData);
 

@@ -23,6 +23,8 @@ export default function MenuClient({
   const [selected, setSelected] = useState({});
   const [recentOrder, setRecentOrder] = useState(null);
   const [customer, setCustomer] = useState(null);
+  const [localTableInfo, setLocalTableInfo] = useState(tableInfo);
+
 
   // Load customer (name + phone) from localStorage
   useEffect(() => {
@@ -45,18 +47,19 @@ export default function MenuClient({
 
   // Save table info when QR menu is opened
   useEffect(() => {
-    if (typeof window === "undefined") return;
+  if (localTableInfo && localTableInfo.id) {
+    const safe = {
+      id: localTableInfo.id,
+      name: localTableInfo.name,
+      number: localTableInfo.number,
+    };
 
-    if (tableInfo && tableInfo.id) {
-      const safe = {
-        id: tableInfo.id,
-        name: tableInfo.name,
-        number: tableInfo.number,
-      };
+    sessionStorage.setItem("tableInfo", JSON.stringify(safe));
+  }
+}, [localTableInfo]);
 
-      sessionStorage.setItem("tableInfo", JSON.stringify(safe));
-    }
-  }, [tableInfo]);
+    
+
 
   useEffect(() => {
     const saved = localStorage.getItem("latestOrder");
@@ -88,8 +91,25 @@ export default function MenuClient({
   }, [activeCategoryId]);
 
 const tableLabel =
-  tableInfo?.name ||
-  (tableInfo?.number ? `Table ${tableInfo.number}` : "Unrecognized Table");
+  localTableInfo?.name ||
+  (localTableInfo?.number ? `Table ${localTableInfo.number}` : "Unrecognized Table");
+
+
+  // ALWAYS restore table info even on category change
+useEffect(() => {
+  if (typeof window === "undefined") return;
+
+  const savedTable = sessionStorage.getItem("tableInfo");
+  if (savedTable) {
+    try {
+      const parsed = JSON.parse(savedTable);
+
+      // FORCE SET tableInfo INTO STATE
+      setLocalTableInfo(parsed);
+    } catch (e) {}
+  }
+}, []);
+
 
 
 
@@ -118,7 +138,8 @@ const tableLabel =
             </h1>
 
             {/* Customer + table line */}
-            {(customer || tableLabel) && (
+            {(customer || localTableInfo
+) && (
               <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-gray-300">
                 {customer && (
                   <>
@@ -135,16 +156,17 @@ const tableLabel =
                   </>
                 )}
 
-                {tableLabel && (
-                  <>
-                    {customer && (
-                      <span className="h-1 w-1 rounded-full bg-gray-500" />
-                    )}
-                    <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/70 bg-yellow-400/10 px-3 py-1 font-semibold text-[11px] text-yellow-300">
-                      🪑 {tableLabel}
-                    </span>
-                  </>
-                )}
+{tableLabel && (
+  <>
+    {customer && (
+      <span className="h-1 w-1 rounded-full bg-gray-500" />
+    )}
+    <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/70 bg-yellow-400/10 px-3 py-1 font-semibold text-[11px] text-yellow-300">
+      🪑 {tableLabel}
+    </span>
+  </>
+)}
+
               </div>
             )}
           </div>
@@ -347,18 +369,11 @@ const tableLabel =
           </p>
 <button
   onClick={() => {
-    if (tableLabel !== "Unrecognized Table") {
-      router.push("/order-review");
-    }
+  router.push("/order-review");
+
   }}
-  disabled={tableLabel === "Unrecognized Table"}
-  className={`px-6 sm:px-8 py-2.5 rounded-full font-bold transition
-    ${tableLabel === "Unrecognized Table"
-      ? "bg-gray-700 text-gray-400 cursor-not-allowed"
-      : "bg-yellow-400 text-black hover:bg-yellow-300 active:scale-95"
-    }`}
->
-  {tableLabel === "Unrecognized Table" ? "Scan Required" : "Proceed →"}
+  className={"px-6 sm:px-8 py-2.5 rounded-full font-bold transition bg-yellow-400 text-black hover:bg-yellow-300 active:scale-95"}>
+  Proceed →
 </button>
 
         </div>

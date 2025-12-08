@@ -137,7 +137,7 @@ export default function OrderSuccessPage() {
 
         {/* TABLE */}
         <div className="mt-6 bg-yellow-400 text-black p-3 rounded-lg text-center font-extrabold text-lg shadow-md">
-          Table: {order.table || "Unrecognized Table"}
+          Table: {order.table || 0}
 
         </div>
 
