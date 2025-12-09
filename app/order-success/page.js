@@ -16,18 +16,14 @@ export default function OrderSuccessPage() {
     }
   }, []);
 
+  // 🔔 Play sound on page load
   useEffect(() => {
-  const audio = new Audio("/notify.mp3");
-  audio.volume = 1;
+    const audio = new Audio("/notify.mp3");
+    audio.volume = 1;
+    audio.play().catch(() => {});
+  }, []);
 
-  // Play only once when page loads
-  audio.play().catch(() => {
-    console.warn("Sound blocked until user interaction");
-  });
-}, []);
-
-
-  // 🔥 REAL-TIME ORDER STATUS FETCH
+  // 🔥 LIVE STATUS SYNC
   useEffect(() => {
     if (!order?._id) return;
 
@@ -53,7 +49,7 @@ export default function OrderSuccessPage() {
     );
   }
 
-  // STATUS DISPLAY TEXT
+  // STATUS TEXT
   const statusText = {
     pending: "Your order is waiting to be accepted…",
     preparing: "Your order is now being prepared 🔥",
@@ -61,7 +57,6 @@ export default function OrderSuccessPage() {
     served: "Enjoy your meal! 🍽️",
   };
 
-  // STATUS COLOR
   const statusColor = {
     pending: "text-yellow-300",
     preparing: "text-orange-400",
@@ -107,6 +102,7 @@ export default function OrderSuccessPage() {
           Order Summary
         </h2>
 
+        {/* ITEMS LIST */}
         <div className="space-y-4">
           {order.items.map((item) => (
             <div
@@ -127,18 +123,37 @@ export default function OrderSuccessPage() {
           ))}
         </div>
 
+        {/* BILL BREAKDOWN */}
         <div className="border-t border-gray-700 my-5"></div>
 
-        {/* TOTAL */}
-        <div className="flex justify-between text-lg font-bold">
-          <p>Total Bill</p>
-          <p className="text-yellow-400">₹{order.totalPrice}</p>
+        <div className="space-y-2 text-[15px]">
+          {/* SUBTOTAL */}
+          <div className="flex justify-between">
+            <span className="text-gray-400">Subtotal</span>
+            <span className="font-semibold">₹{order.totalPrice}</span>
+          </div>
+
+          {/* DISCOUNT */}
+          {order.discount > 0 && (
+            <div className="flex justify-between text-green-400">
+              <span>
+                Discount{" "}
+                {order.couponCode ? `(${order.couponCode})` : ""}
+              </span>
+              <span>-₹{order.discount}</span>
+            </div>
+          )}
+
+          {/* FINAL TOTAL */}
+          <div className="flex justify-between font-bold text-lg mt-2">
+            <span>Total Payable</span>
+            <span className="text-yellow-400">₹{order.finalPrice}</span>
+          </div>
         </div>
 
         {/* TABLE */}
         <div className="mt-6 bg-yellow-400 text-black p-3 rounded-lg text-center font-extrabold text-lg shadow-md">
-          Table: {order.table || 0}
-
+          Table: {order.table || "—"}
         </div>
 
         {/* VIEW BILL BUTTON */}
@@ -161,7 +176,7 @@ export default function OrderSuccessPage() {
         <p className="text-[10px] text-gray-500">© OneBite Menu System</p>
       </div>
 
-      {/* BACK TO MENU */}
+      {/* BACK BUTTON */}
       <div className="mt-8 text-center">
         <button
           onClick={() => {

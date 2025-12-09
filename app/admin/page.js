@@ -128,6 +128,15 @@ export default function AdminDashboard() {
           href="/admin/payments"
           color="from-[#181818] to-[#222]"
         />
+
+
+         <Card
+          title="analytics"
+          count={users.length}
+          icon={Users}
+          href="/admin/analytics"
+          color="from-[#181818] to-[#222]"
+        />
       </div>
 
       {/* SHORTCUTS */}
