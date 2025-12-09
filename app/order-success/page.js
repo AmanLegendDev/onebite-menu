@@ -7,6 +7,13 @@ export default function OrderSuccessPage() {
   const [order, setOrder] = useState(null);
   const [liveStatus, setLiveStatus] = useState("pending");
 
+  // ⭐ RATING STATES
+  const [showRating, setShowRating] = useState(false);
+  const [rating, setRating] = useState(0);
+  const [hover, setHover] = useState(0);
+  const [popup, setPopup] = useState(false);
+
+  // Load order
   useEffect(() => {
     const savedOrder = localStorage.getItem("latestOrder");
     if (savedOrder) {
@@ -16,14 +23,40 @@ export default function OrderSuccessPage() {
     }
   }, []);
 
-  // 🔔 Play sound on page load
+  // Play notification sound (once)
   useEffect(() => {
     const audio = new Audio("/notify.mp3");
     audio.volume = 1;
     audio.play().catch(() => {});
   }, []);
 
-  // 🔥 LIVE STATUS SYNC
+  // ⭐ Show rating only if not submitted
+  useEffect(() => {
+    const hasRated = localStorage.getItem("onebite_rating_given");
+    if (!hasRated) setShowRating(true);
+  }, []);
+
+  // ⭐ Submit rating → backend + hide stars
+  async function submitRating(star) {
+    setRating(star);
+    setPopup(true);
+
+    await fetch("/api/rating", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        rating: star,
+        orderId: order?._id,
+        phone: order?.customerPhone,
+      }),
+    });
+
+    localStorage.setItem("onebite_rating_given", "yes");
+
+    setTimeout(() => setShowRating(false), 1200);
+  }
+
+  // Live order status poll
   useEffect(() => {
     if (!order?._id) return;
 
@@ -49,7 +82,6 @@ export default function OrderSuccessPage() {
     );
   }
 
-  // STATUS TEXT
   const statusText = {
     pending: "Your order is waiting to be accepted…",
     preparing: "Your order is now being prepared 🔥",
@@ -80,7 +112,7 @@ export default function OrderSuccessPage() {
         />
       </motion.div>
 
-      {/* STATUS */}
+      {/* ORDER STATUS */}
       <div className="text-center mt-6">
         <h1 className="text-3xl font-extrabold tracking-wide text-yellow-400">
           Order Confirmed 🎉
@@ -123,28 +155,24 @@ export default function OrderSuccessPage() {
           ))}
         </div>
 
-        {/* BILL BREAKDOWN */}
         <div className="border-t border-gray-700 my-5"></div>
 
+        {/* BILL BREAKDOWN */}
         <div className="space-y-2 text-[15px]">
-          {/* SUBTOTAL */}
           <div className="flex justify-between">
             <span className="text-gray-400">Subtotal</span>
             <span className="font-semibold">₹{order.totalPrice}</span>
           </div>
 
-          {/* DISCOUNT */}
           {order.discount > 0 && (
             <div className="flex justify-between text-green-400">
               <span>
-                Discount{" "}
-                {order.couponCode ? `(${order.couponCode})` : ""}
+                Discount {order.couponCode ? `(${order.couponCode})` : ""}
               </span>
               <span>-₹{order.discount}</span>
             </div>
           )}
 
-          {/* FINAL TOTAL */}
           <div className="flex justify-between font-bold text-lg mt-2">
             <span>Total Payable</span>
             <span className="text-yellow-400">₹{order.finalPrice}</span>
@@ -155,8 +183,7 @@ export default function OrderSuccessPage() {
         <div className="mt-6 bg-yellow-400 text-black p-3 rounded-lg text-center font-extrabold text-lg shadow-md">
           Table: {order.table || "—"}
         </div>
-
-        {/* VIEW BILL BUTTON */}
+              {/* VIEW BILL BUTTON */}
         <button
           onClick={() => (window.location.href = `/bill/${order._id}`)}
           className="mt-6 w-full bg-[#FF6A3D] hover:bg-[#ff7c50] text-white py-3 rounded-lg font-bold text-sm shadow-lg active:scale-95 transition"
@@ -164,19 +191,70 @@ export default function OrderSuccessPage() {
           View Detailed Bill →
         </button>
 
+        {/* ⭐⭐⭐⭐⭐ RATING SECTION */}
+        {showRating && (
+          <div className="mt-10 text-center">
+            <p className="text-gray-300 font-semibold text-sm mb-3">
+              Rate your experience ⭐
+            </p>
+
+            <div className="flex justify-center gap-4">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <motion.span
+                  key={star}
+                  whileHover={{ scale: 1.3 }}
+                  whileTap={{ scale: 0.8 }}
+                  onMouseEnter={() => setHover(star)}
+                  onMouseLeave={() => setHover(0)}
+                  onClick={() => submitRating(star)}
+                  className={`text-3xl cursor-pointer transition 
+                    ${
+                      star <= (hover || rating)
+                        ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(255,199,0,0.7)]"
+                        : "text-gray-600"
+                    }`}
+                >
+                  ★
+                </motion.span>
+
+                
+              ))}
+              
+            </div>
+          </div>
+          
+        )}
+
+
+
+
+        {/* POPUP */}
+        {popup && (
+          <motion.div
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.4, type: "spring" }}
+            className="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
+          >
+            <div className="bg-[#111] px-8 py-6 rounded-2xl text-center border border-yellow-400/30 shadow-xl">
+              <p className="text-3xl mb-2">⭐ {rating} / 5</p>
+              <p className="text-yellow-400 font-bold text-lg">
+                Thank you for your feedback!
+              </p>
+              <p className="text-gray-400 text-sm mt-1">
+                Your rating helps us improve 🍽️
+              </p>
+            </div>
+          </motion.div>
+        )}
+
+  
+
         {/* DATE */}
         <p className="text-center text-gray-500 text-xs mt-4">
           {new Date(order.createdAt).toLocaleString()}
         </p>
-      </motion.div>
-
-      {/* FOOTER */}
-      <div className="mt-12 text-center opacity-70">
-        <p className="text-xs">Made with ❤️ by Aman</p>
-        <p className="text-[10px] text-gray-500">© OneBite Menu System</p>
-      </div>
-
-      {/* BACK BUTTON */}
+           {/* BACK BUTTON */}
       <div className="mt-8 text-center">
         <button
           onClick={() => {
@@ -187,6 +265,15 @@ export default function OrderSuccessPage() {
           Back to Menu
         </button>
       </div>
+      </motion.div>
+
+      {/* FOOTER */}
+      <div className="mt-12 text-center opacity-70">
+        <p className="text-xs" >© Made with ❤️ by Aman</p>
+        <p className="text-[10px] text-gray-500">OneBite Menu System</p>
+      </div>
+
+   
     </div>
   );
 }
