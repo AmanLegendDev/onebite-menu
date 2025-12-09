@@ -20,6 +20,7 @@
     "cloudinary": "^2.8.0",
     "dotenv": "^17.2.3",
     "framer-motion": "^12.23.24",
+    "html2canvas": "^1.4.1",
     "i": "^0.3.7",
     "lucide-react": "^0.554.0",
     "mongodb": "^7.0.0",

@@ -71,6 +71,8 @@ const OrderSchema = new mongoose.Schema(
   type: String,
   default: null,
 },
+paymentMethod: { type: String, default: null }, // "upi" | "cash"
+paymentStatus: { type: String, default: "unpaid" }, // unpaid | pending | paid
 
 
   },
