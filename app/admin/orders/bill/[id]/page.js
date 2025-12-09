@@ -1,62 +1,73 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 
-export default function BillPage({ params }) {
+export default function AdminBillPage({ params }) {
   const { id } = params;
   const [order, setOrder] = useState(null);
   const [loading, setLoading] = useState(true);
-console.log(order)
-  // Fetch order by ID
+
+  // FETCH ORDER DATA
   useEffect(() => {
-    async function loadOrder() {
+    async function load() {
       try {
-        const res = await fetch(`/api/orders/${id}`, { cache: "no-store" }) 
+        const res = await fetch(`/api/orders/${id}`, { cache: "no-store" });
         const data = await res.json();
         setOrder(data.order);
-      } catch (err) {
-        console.log("Bill fetch error:", err);
+      } catch (e) {
+        console.log("Bill error:", e);
       }
       setLoading(false);
     }
-    loadOrder();
+    load();
   }, [id]);
 
-  if (loading) {
+  if (loading)
     return (
-      <div className="p-10 text-center text-gray-300 text-xl">
-        Loading bill...
-      </div>
+      <div className="p-10 text-center text-gray-400 text-xl">Loading bill…</div>
     );
-  }
 
-  if (!order) {
+  if (!order)
     return (
-      <div className="p-10 text-center text-gray-300 text-xl">
+      <div className="p-10 text-center text-gray-400 text-xl">
         Order not found ❌
       </div>
     );
-  }
 
-  // KOT NUMBER
-  const KOT = order.customerSessionId
+  // ===========================
+  // CALCULATIONS
+  // ===========================
+  const subtotal = order.items.reduce((t, i) => t + i.price * i.qty, 0);
+
+  const discount = order.discount || 0;
+  const finalPrice = order.finalPrice || subtotal - discount;
+
+  // GST OFF (CLIENT WANTS NO GST RIGHT NOW)
+  const gstAmount = 0;
+
+  // PAYMENT STATUS BADGE
+  const statusLabel = {
+    unpaid: "Pending Payment",
+    paid: "Paid",
+    cash: "Cash Payment",
+  }[order.paymentStatus || "unpaid"];
+
+  const badgeColor = {
+    unpaid: "bg-red-500",
+    paid: "bg-green-500",
+    cash: "bg-yellow-500 text-black",
+  }[order.paymentStatus || "unpaid"];
+
+  // KOT NUMBER (YOUR OLD STYLE)
+  const kotNo = order.customerSessionId
     ? order.customerSessionId.slice(-6).toUpperCase()
     : "N/A";
-
-  // TAX CALCULATION
-  const subtotal = order.items.reduce(
-    (sum, item) => sum + item.qty * item.price,
-    0
-  );
-
-  const gstAmount = subtotal * 0.05;
-  const finalTotal = subtotal + gstAmount;
 
   function downloadBill() {
     const content = document.getElementById("bill-area").innerHTML;
     const blob = new Blob([content], { type: "text/html" });
     const url = URL.createObjectURL(blob);
-
     const a = document.createElement("a");
     a.href = url;
     a.download = `bill-${order._id}.html`;
@@ -64,24 +75,31 @@ console.log(order)
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 p-8 text-black">
+    <div className="min-h-screen bg-gray-100 p-6 sm:p-10 text-black">
+      {/* BILL BOX */}
       <div
-        className="max-w-lg mx-auto bg-white shadow-lg rounded-xl p-8"
+        className="max-w-lg mx-auto bg-white rounded-xl shadow-lg p-6 sm:p-8 border"
         id="bill-area"
       >
         {/* HEADER */}
         <div className="text-center border-b pb-4">
-          <h1 className="text-3xl font-extrabold">ONEBITE SANJAULI</h1>
-          <p className="text-gray-600 mt-1">
+          <div className="flex justify-center mb-3">
+            <Image
+              src="/onebite-2.jpg"
+              width={80}
+              height={80}
+              alt="logo"
+              className="rounded-full border border-[#FFB100]"
+            />
+          </div>
+
+          <h1 className="text-2xl font-extrabold">ONEBITE SANJAULI</h1>
+          <p className="text-sm text-gray-600">
             Sanjauli, Shimla, Himachal Pradesh
           </p>
-          <p className="text-gray-600">India</p>
+          <p className="text-sm text-gray-600">Restaurant Contact: 7812050001</p>
 
-          <p className="text-sm mt-2 font-semibold">
-            Restaurant Contact: <span className="font-semibold">7812050001</span>
-          </p>
-
-          <p className="text-sm mt-3">
+          <p className="mt-3 text-sm">
             <b>Date:</b> {new Date(order.createdAt).toLocaleString()}
           </p>
         </div>
@@ -95,16 +113,19 @@ console.log(order)
             <b>Table No:</b> {order.table}
           </p>
           <p>
-            <b>KOT No:</b> {KOT}
+            <b>KOT No:</b> {kotNo}
+          </p>
+          <p>
+            <b>Customer:</b> {order.customerName || "N/A"}
+          </p>
+          <p>
+            <b>Phone:</b> {order.customerPhone || "N/A"}
           </p>
 
-          {/* CUSTOMER DETAILS */}
-          <p>
-            <b>Customer:</b> {order.customerName}
-          </p>
-          <p>
-            <b>Contact:</b> {order.customerPhone}
-          </p>
+          {/* PAYMENT STATUS */}
+          <div className={`inline-block px-3 py-1 mt-2 rounded-full text-xs font-bold text-white ${badgeColor}`}>
+            {statusLabel}
+          </div>
         </div>
 
         {/* ITEMS */}
@@ -137,24 +158,28 @@ console.log(order)
             <span>₹{subtotal}</span>
           </div>
 
+          {discount > 0 && (
+            <div className="flex justify-between text-green-600 font-semibold">
+              <span>Discount</span>
+              <span>-₹{discount}</span>
+            </div>
+          )}
+
           <div className="flex justify-between">
-            <span>GST (5%)</span>
-            <span>₹{gstAmount.toFixed(0)}</span>
+            <span>GST</span>
+            <span>₹0</span>
           </div>
 
-          <div className="flex justify-between text-xl font-bold mt-3 border-t pt-3">
-            <span>Total</span>
-            <span>₹{finalTotal.toFixed(0)}</span>
+          <div className="flex justify-between text-xl font-bold mt-4 border-t pt-3">
+            <span>Total Payable</span>
+            <span className="text-[#FF6A3D]">₹{finalPrice}</span>
           </div>
         </div>
 
         {/* FOOTER */}
         <p className="text-center text-xs text-gray-500 mt-8 border-t pt-4">
-          Thank you for dining with OneBite ❤️
-          <br />
-          <span className="text-[11px] opacity-70">
-            Made with ❤️ by Aman
-          </span>
+          Thank you for dining with OneBite ❤️ <br />
+          <span className="text-[10px] opacity-70">Made by Aman Digital Solutions</span>
         </p>
       </div>
 
