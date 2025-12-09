@@ -81,12 +81,42 @@ export async function POST(req) {
     console.log("📌 FINAL ORDER DATA TO BE SAVED:", orderData);
 
     // 4️⃣ SAVE ORDER
-    const newOrder = await Order.create(orderData);
+// 4️⃣ SAVE ORDER
+const newOrder = await Order.create(orderData);
 
-    return NextResponse.json(
-      { success: true, order: newOrder },
-      { status: 201 }
-    );
+// ----- DECREASE STOCK (call internal route logic directly) -----
+// Prepare items for stock decrease (just id + qty)
+try {
+  const itemsToDecrease = (orderData.items || []).map(i => ({
+    id: i._id || i._id?._id || i.id || i._id, // defensive
+    qty: i.qty || 1
+  })).filter(Boolean);
+
+  if (itemsToDecrease.length) {
+    // Option A: internal call via model logic (preferred)
+    // Use MenuItem.bulkWrite here directly (same logic as decrease route),
+    // to avoid extra HTTP fetch inside server.
+    const bulkOps = itemsToDecrease.map(it => ({
+      updateOne: {
+        filter: { _id: it.id },
+        update: { $inc: { stock: -Math.abs(Number(it.qty) || 0) } }
+      }
+    }));
+    await MenuItem.bulkWrite(bulkOps, { ordered: false });
+    await MenuItem.updateMany({ _id: { $in: itemsToDecrease.map(i => i.id) }, stock: { $lte: 0 } }, { $set: { stock: 0, outOfStock: true } });
+    await MenuItem.updateMany({ _id: { $in: itemsToDecrease.map(i => i.id) }, stock: { $gt: 0 } }, { $set: { outOfStock: false } });
+  }
+} catch (e) {
+  console.error("STOCK DECREASE AFTER ORDER SAVE ERROR:", e);
+  // don't fail the order because stock update failed — log & continue
+}
+
+// return order
+return NextResponse.json(
+  { success: true, order: newOrder },
+  { status: 201 }
+);
+
 
   } catch (err) {
     console.log("❌ Order POST Error:", err);

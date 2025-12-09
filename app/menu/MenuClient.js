@@ -25,7 +25,6 @@ export default function MenuClient({
   const [customer, setCustomer] = useState(null);
   const [localTableInfo, setLocalTableInfo] = useState(tableInfo);
 
-
   // Load customer (name + phone) from localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -47,19 +46,16 @@ export default function MenuClient({
 
   // Save table info when QR menu is opened
   useEffect(() => {
-  if (localTableInfo && localTableInfo.id) {
-    const safe = {
-      id: localTableInfo.id,
-      name: localTableInfo.name,
-      number: localTableInfo.number,
-    };
+    if (localTableInfo && localTableInfo.id) {
+      const safe = {
+        id: localTableInfo.id,
+        name: localTableInfo.name,
+        number: localTableInfo.number,
+      };
 
-    sessionStorage.setItem("tableInfo", JSON.stringify(safe));
-  }
-}, [localTableInfo]);
-
-    
-
+      sessionStorage.setItem("tableInfo", JSON.stringify(safe));
+    }
+  }, [localTableInfo]);
 
   useEffect(() => {
     const saved = localStorage.getItem("latestOrder");
@@ -79,6 +75,7 @@ export default function MenuClient({
   const totalQty = cart.reduce((s, i) => s + i.qty, 0);
   const totalPrice = cart.reduce((s, i) => s + i.qty * i.price, 0);
 
+  // Visible categories limited to active
   const visibleCategories = liveCategories.filter(
     (cat) => String(cat._id) === String(activeCat)
   );
@@ -90,28 +87,38 @@ export default function MenuClient({
     }
   }, [activeCategoryId]);
 
-const tableLabel =
-  localTableInfo?.name ||
-  (localTableInfo?.number ? `Table ${localTableInfo.number}` : "Unrecognized Table");
-
+  const tableLabel =
+    localTableInfo?.name ||
+    (localTableInfo?.number ? `Table ${localTableInfo.number}` : "Unrecognized Table");
 
   // ALWAYS restore table info even on category change
-useEffect(() => {
-  if (typeof window === "undefined") return;
+  useEffect(() => {
+    if (typeof window === "undefined") return;
 
-  const savedTable = sessionStorage.getItem("tableInfo");
-  if (savedTable) {
-    try {
-      const parsed = JSON.parse(savedTable);
+    const savedTable = sessionStorage.getItem("tableInfo");
+    if (savedTable) {
+      try {
+        const parsed = JSON.parse(savedTable);
 
-      // FORCE SET tableInfo INTO STATE
-      setLocalTableInfo(parsed);
-    } catch (e) {}
-  }
-}, []);
+        // FORCE SET tableInfo INTO STATE
+        setLocalTableInfo(parsed);
+      } catch (e) {}
+    }
+  }, []);
 
+  // Helper: get qty in cart for an item
+  const getCartQty = (itemId) => {
+    const inCart = cart.find((c) => c._id === itemId);
+    return inCart?.qty ?? 0;
+  };
 
-
+  // Helper: check if we can add more of item based on stock
+  const canAddMore = (item) => {
+    if (item.outOfStock) return false;
+    if (typeof item.stock !== "number") return true; // unlimited or not set
+    const current = getCartQty(item._id);
+    return current < Number(item.stock);
+  };
 
   return (
     <div className="min-h-screen bg-[#050505] text-white pb-28">
@@ -138,8 +145,7 @@ useEffect(() => {
             </h1>
 
             {/* Customer + table line */}
-            {(customer || localTableInfo
-) && (
+            {(customer || localTableInfo) && (
               <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11px] sm:text-xs text-gray-300">
                 {customer && (
                   <>
@@ -156,17 +162,16 @@ useEffect(() => {
                   </>
                 )}
 
-{tableLabel && (
-  <>
-    {customer && (
-      <span className="h-1 w-1 rounded-full bg-gray-500" />
-    )}
-    <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/70 bg-yellow-400/10 px-3 py-1 font-semibold text-[11px] text-yellow-300">
-      🪑 {tableLabel}
-    </span>
-  </>
-)}
-
+                {tableLabel && (
+                  <>
+                    {customer && (
+                      <span className="h-1 w-1 rounded-full bg-gray-500" />
+                    )}
+                    <span className="inline-flex items-center gap-1 rounded-full border border-yellow-400/70 bg-yellow-400/10 px-3 py-1 font-semibold text-[11px] text-yellow-300">
+                      🪑 {tableLabel}
+                    </span>
+                  </>
+                )}
               </div>
             )}
           </div>
@@ -240,8 +245,7 @@ useEffect(() => {
               <div className="flex items-baseline justify-between gap-2 mb-4">
                 <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-wide">
                   {cat.name}{" "}
-                  {getCategoryCount(cat._id) > 0 &&
-                    `(${getCategoryCount(cat._id)})`}
+                  {getCategoryCount(cat._id) > 0 && `(${getCategoryCount(cat._id)})`}
                 </h2>
               </div>
 
@@ -255,13 +259,47 @@ useEffect(() => {
                 {liveItems
                   .filter(
                     (item) =>
-                      String(item.category) === String(cat._id) ||
-                      String(item.category?._id) === String(cat._id)
+                      // same category
+                      (String(item.category) === String(cat._id) ||
+                        String(item.category?._id) === String(cat._id)) &&
+                      // HIDE out of stock items from customer view
+                      !item.outOfStock
                   )
                   .map((item) => {
                     const inCart = cart.find((c) => c._id === item._id);
                     const qty = inCart?.qty ?? 0;
                     const isSelected = selected[item._id] > 0;
+
+                    // Stock label logic
+                    const stockNum =
+                      typeof item.stock === "number" ? Number(item.stock) : null;
+                    const lowLimit =
+                      typeof item.lowStockLimit === "number"
+                        ? Number(item.lowStockLimit)
+                        : 5;
+
+                    let stockBadge = null;
+                    if (item.outOfStock) {
+                      stockBadge = (
+                        <span className="text-red-400 text-xs font-semibold">
+                          Out of stock
+                        </span>
+                      );
+                    } else if (stockNum !== null && stockNum <= lowLimit) {
+                      stockBadge = (
+                        <span className="text-yellow-400 text-xs font-semibold">
+                          Only {stockNum} left
+                        </span>
+                      );
+                    } else {
+                      stockBadge = (
+                        <span className="text-green-400 text-xs font-semibold">
+                          In stock
+                        </span>
+                      );
+                    }
+
+                    const addDisabled = !canAddMore(item);
 
                     return (
                       <motion.div
@@ -286,9 +324,12 @@ useEffect(() => {
                             {item.name}
                           </h3>
 
-                        <p className="text-gray-400 text-xs sm:text-sm mt-1 line-clamp-2 overflow-hidden">
-  {item.description}
-</p>
+                          <p className="text-gray-400 text-xs sm:text-sm mt-1 line-clamp-2 overflow-hidden">
+                            {item.description}
+                          </p>
+
+                          {/* STOCK BADGE */}
+                          <div className="mt-2">{stockBadge}</div>
 
                           {/* QTY CONTROL */}
                           <div className="flex items-center justify-center gap-4 mt-4">
@@ -305,11 +346,18 @@ useEffect(() => {
 
                             <button
                               onClick={() => {
-                                qty === 0
-                                  ? addToCart(item)
-                                  : increaseQty(item._id);
+                                // Prevent adding beyond stock
+                                if (addDisabled) {
+                                  alert("Stock limit reached.");
+                                  return;
+                                }
+                                qty === 0 ? addToCart(item) : increaseQty(item._id);
                               }}
-                              className="bg-yellow-400 text-black w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold hover:bg-yellow-300"
+                              className={`w-9 h-9 flex items-center justify-center rounded-full text-lg font-bold ${
+                                addDisabled
+                                  ? "bg-gray-600 text-gray-300 cursor-not-allowed"
+                                  : "bg-yellow-400 text-black hover:bg-yellow-300"
+                              }`}
                             >
                               +
                             </button>
@@ -330,9 +378,7 @@ useEffect(() => {
                                 whileTap={{ scale: 0.95 }}
                                 onClick={() => {
                                   if (qty < 1) {
-                                    alert(
-                                      "Please select at least 1 quantity."
-                                    );
+                                    alert("Please select at least 1 quantity.");
                                     return;
                                   }
                                   setSelected((prev) => ({
@@ -367,15 +413,16 @@ useEffect(() => {
           <p className="font-semibold text-yellow-200 text-base sm:text-lg">
             {totalQty} items • ₹{totalPrice}
           </p>
-<button
-  onClick={() => {
-  router.push("/order-review");
-
-  }}
-  className={"px-6 sm:px-8 py-2.5 rounded-full font-bold transition bg-yellow-400 text-black hover:bg-yellow-300 active:scale-95"}>
-  Proceed →
-</button>
-
+          <button
+            onClick={() => {
+              router.push("/order-review");
+            }}
+            className={
+              "px-6 sm:px-8 py-2.5 rounded-full font-bold transition bg-yellow-400 text-black hover:bg-yellow-300 active:scale-95"
+            }
+          >
+            Proceed →
+          </button>
         </div>
       )}
     </div>

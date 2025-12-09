@@ -8,10 +8,15 @@ export default function NewItemPage() {
   const router = useRouter();
 
   const [categories, setCategories] = useState([]);
+
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [desc, setDesc] = useState("");
   const [category, setCategory] = useState("");
+
+  const [stock, setStock] = useState(0);
+  const [lowStockLimit, setLowStockLimit] = useState(5);
+
   const [image, setImage] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -29,10 +34,7 @@ export default function NewItemPage() {
   function handleImage(e) {
     const file = e.target.files[0];
     setImage(file);
-
-    if (file) {
-      setPreview(URL.createObjectURL(file));
-    }
+    if (file) setPreview(URL.createObjectURL(file));
   }
 
   async function addItem() {
@@ -48,11 +50,12 @@ export default function NewItemPage() {
     formData.append("price", price);
     formData.append("description", desc);
     formData.append("category", category);
+    formData.append("stock", stock);
+    formData.append("lowStockLimit", lowStockLimit);
     if (image) formData.append("image", image);
 
     await fetch("/api/items", { method: "POST", body: formData });
 
-    // ⚡ INSTANT redirect (no waiting for image upload)
     router.push("/admin/items");
   }
 
@@ -78,7 +81,7 @@ export default function NewItemPage() {
         {/* NAME */}
         <label className="font-semibold text-sm mb-1 block">Item Name *</label>
         <input
-          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg focus:border-[#ff6a3d] outline-none"
+          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg"
           placeholder="e.g., Margherita Pizza"
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -87,16 +90,36 @@ export default function NewItemPage() {
         {/* PRICE */}
         <label className="font-semibold text-sm mb-1 block">Price *</label>
         <input
-          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg focus:border-[#ff6a3d] outline-none"
+          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg"
           placeholder="₹ Price"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
         />
 
+        {/* STOCK */}
+        <label className="font-semibold text-sm mb-1 block">Initial Stock *</label>
+        <input
+          type="number"
+          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg"
+          placeholder="Enter stock (e.g. 30)"
+          value={stock}
+          onChange={(e) => setStock(e.target.value)}
+        />
+
+        {/* LOW STOCK LIMIT */}
+        <label className="font-semibold text-sm mb-1 block">Low Stock Alert *</label>
+        <input
+          type="number"
+          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg"
+          placeholder="Alert when stock under..."
+          value={lowStockLimit}
+          onChange={(e) => setLowStockLimit(e.target.value)}
+        />
+
         {/* DESCRIPTION */}
         <label className="font-semibold text-sm mb-1 block">Description</label>
         <textarea
-          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg min-h-[90px] focus:border-[#ff6a3d]"
+          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg min-h-[90px]"
           placeholder="Short description..."
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
@@ -105,7 +128,7 @@ export default function NewItemPage() {
         {/* CATEGORY */}
         <label className="font-semibold text-sm mb-1 block">Category *</label>
         <select
-          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg focus:border-[#ff6a3d]"
+          className="p-3 w-full mb-4 bg-black border border-gray-700 rounded-lg"
           value={category}
           onChange={(e) => setCategory(e.target.value)}
         >
@@ -115,7 +138,7 @@ export default function NewItemPage() {
           ))}
         </select>
 
-        {/* IMAGE UPLOAD */}
+        {/* IMAGE */}
         <label className="font-semibold text-sm mb-1 block">Item Image</label>
         <input
           type="file"
@@ -133,15 +156,14 @@ export default function NewItemPage() {
           </div>
         )}
 
-        {/* SUBMIT BUTTON */}
+        {/* SUBMIT */}
         <button
           onClick={addItem}
           disabled={loading}
-          className="w-full bg-[#ff6a3d] hover:bg-[#ff874f] py-3 rounded-xl font-bold mt-6 transition active:scale-95"
+          className="w-full bg-[#ff6a3d] hover:bg-[#ff874f] py-3 rounded-xl font-bold mt-6"
         >
           {loading ? "Adding..." : "Add Item"}
         </button>
-
       </div>
     </div>
   );

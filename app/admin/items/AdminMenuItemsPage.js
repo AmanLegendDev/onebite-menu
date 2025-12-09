@@ -203,6 +203,55 @@ export default function AdminItemsPage() {
                 {item.name}
               </h2>
 
+              {/* STOCK INFO */}
+              <div className="mb-3">
+                <p className="text-sm text-gray-300">
+                  Stock:{" "}
+                  <span
+                    className={`font-bold ${
+                      item.outOfStock
+                        ? "text-red-500"
+                        : item.stock <= item.lowStockLimit
+                        ? "text-yellow-400"
+                        : "text-green-400"
+                    }`}
+                  >
+                    {item.stock}
+                  </span>
+                </p>
+
+                {/* ADJUST BUTTONS */}
+                <div className="flex gap-2 mt-1">
+                  <button
+                    onClick={async () => {
+                      await fetch(`/api/items/${item._id}/stock`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ stockChange: -5 }),
+                      });
+                      loadItems();
+                    }}
+                    className="px-2 py-1 bg-red-600 rounded text-xs hover:bg-red-700"
+                  >
+                    -5
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      await fetch(`/api/items/${item._id}/stock`, {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ stockChange: +5 }),
+                      });
+                      loadItems();
+                    }}
+                    className="px-2 py-1 bg-green-600 rounded text-xs hover:bg-green-700"
+                  >
+                    +5
+                  </button>
+                </div>
+              </div>
+
               <p className="text-gray-300 text-sm mb-1">
                 Category:{" "}
                 <span className="font-bold text-white">

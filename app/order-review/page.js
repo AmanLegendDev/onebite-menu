@@ -211,6 +211,15 @@ const kotData = {
         body: JSON.stringify(orderData),
       });
 
+      // After order is successfully saved
+for (let item of finalCart) {
+  await fetch(`/api/items/${item._id}/reduce-stock`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ qty: item.qty }),
+  });
+}
+
       const data = await res.json();
 
       if (data.success) {
