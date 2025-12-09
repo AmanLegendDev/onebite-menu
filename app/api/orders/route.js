@@ -20,6 +20,17 @@ export async function GET(req) {
       orders = orders.slice(0, 1);
     }
 
+    const kotCounter = await Counter.findOneAndUpdate(
+  { key: "kot" },
+  { $inc: { seq: 1 } },
+  { new: true, upsert: true }
+);
+
+const kotId = `KOT${String(kotCounter.seq).padStart(4, "0")}`;
+order.kotId = kotId;
+await order.save();
+
+
     return NextResponse.json({ success: true, orders });
   } catch (err) {
     console.log("GET Orders Error:", err);

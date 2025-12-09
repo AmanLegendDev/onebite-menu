@@ -1,132 +1,186 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Image from "next/image";
 
 export default function BillPage({ params }) {
   const { orderId } = params;
   const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchOrder() {
-      const res = await fetch(`/api/orders/${orderId}`);
-      const data = await res.json();
-      if (data.success) setOrder(data.order);
+    async function loadOrder() {
+      try {
+        const res = await fetch(`/api/orders/${orderId}`, { cache: "no-store" });
+        const data = await res.json();
+        setOrder(data.order);
+      } catch (err) {
+        console.log("Bill fetch error:", err);
+      }
+      setLoading(false);
     }
-    fetchOrder();
+    loadOrder();
   }, [orderId]);
 
+  if (loading)
+    return <div className="p-10 text-center text-gray-300 text-xl">Loading bill...</div>;
+
   if (!order)
-    return (
-      <div className="min-h-screen flex items-center justify-center text-gray-300">
-        Loading bill…
-      </div>
-    );
+    return <div className="p-10 text-center text-gray-300 text-xl">Order not found ❌</div>;
 
-  // Calculate subtotal
-  const subtotal = order.items.reduce(
-    (sum, item) => sum + item.qty * item.price,
-    0
-  );
 
-  const kotNumber = order.customerSessionId?.slice(-6).toUpperCase(); // AUTO KOT
+  // ============ VALUES ============
+  const KOT = order.kotId || "N/A";
+
+  const subtotal = order.items.reduce((sum, item) => sum + item.qty * item.price, 0);
+
+  const gstAmount = Math.round(subtotal * 0.05);
+
+  // ✔ If coupon applied → discount already in order.finalPrice
+  const finalTotal = order.finalPrice ? order.finalPrice : subtotal + gstAmount;
+
+  const paymentStatus = order.paymentStatus || "unpaid";
+
+  // ============ QR MAKER ============
+  function makeUPI(amount) {
+    const upiID = "onzaman786-1@okaxis";
+    const name = "OneBite";
+    return `upi://pay?pa=${upiID}&pn=${name}&am=${amount}&cu=INR`;
+  }
+
+  function downloadBill() {
+    const html = document.getElementById("bill-area").innerHTML;
+    const blob = new Blob([html], { type: "text/html" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `bill-${order._id}.html`;
+    a.click();
+  }
+
+  // BADGE COMPONENT
+  function StatusBadge() {
+    if (paymentStatus === "paid")
+      return <span className="px-3 py-1 bg-green-600 text-white rounded-full text-xs">PAID</span>;
+
+    if (paymentStatus === "pending")
+      return <span className="px-3 py-1 bg-yellow-500 text-black rounded-full text-xs">PENDING</span>;
+
+    return <span className="px-3 py-1 bg-red-500 text-white rounded-full text-xs">UNPAID</span>;
+  }
 
   return (
-    <div className="min-h-screen bg-[#f4f4f4] flex items-center justify-center py-10 px-4">
-      <div className="w-full max-w-md bg-white shadow-2xl rounded-xl p-6 border border-gray-200">
+    <div className="min-h-screen bg-gray-100 p-8 text-black">
+
+      <div className="max-w-lg mx-auto bg-white shadow-lg rounded-xl p-8" id="bill-area">
 
         {/* HEADER */}
-        <div className="flex flex-col items-center">
-          <Image
-            src="/onebite-2.jpg"
-            width={90}
-            height={90}
-            alt="OneBite Logo"
-            className="rounded-full shadow-lg border-2 border-yellow-500"
-          />
-          <h1 className="mt-3 text-2xl font-extrabold tracking-wide text-gray-900">
-            ONEBITE
-          </h1>
-          <p className="text-sm text-gray-500 -mt-1">Premium Digital Dining</p>
-        </div>
+        <div className="text-center border-b pb-4">
+          <h1 className="text-3xl font-extrabold">ONEBITE SANJAULI</h1>
+          <p className="text-gray-600 mt-1">Sanjauli, Shimla, Himachal Pradesh</p>
+          <p className="text-gray-600">India</p>
 
-        <div className="mt-6 border-t border-b py-3">
-          <div className="flex justify-between text-sm font-semibold text-gray-700">
-            <p>Bill No:</p>
-            <p>{order._id.slice(-8).toUpperCase()}</p>
-          </div>
-
-          <div className="flex justify-between text-sm font-semibold text-gray-700 mt-2">
-            <p>KOT No:</p>
-            <p className="text-red-600 font-bold">{kotNumber}</p>
-          </div>
-
-          <div className="flex justify-between text-sm font-semibold text-gray-700 mt-2">
-            <p>Table:</p>
-            <p>{order.tableName}</p>
-          </div>
-
-          <div className="flex justify-between text-sm text-gray-700 mt-2">
-            <p>Date:</p>
-            <p>{new Date(order.createdAt).toLocaleString()}</p>
-          </div>
-        </div>
-
-        {/* CUSTOMER INFO */}
-        <div className="mt-4">
-          <p className="text-sm text-gray-700 font-semibold">Customer</p>
-          <p className="text-gray-900 font-bold">
-            {order.customerName || "N/A"}
+          <p className="mt-2 text-sm font-semibold">
+            Contact: <span className="font-bold">7812050001</span>
           </p>
-          <p className="text-gray-600 text-sm">
-            {order.customerPhone || ""}
+
+          <p className="text-sm mt-3">
+            <b>Date:</b> {new Date(order.createdAt).toLocaleString()}
           </p>
         </div>
+
+        {/* ORDER META */}
+        <div className="mt-4 text-sm space-y-1">
+          <p><b>Order ID:</b> {order._id}</p>
+          <p><b>Table:</b> {order.tableName}</p>
+          <p><b>KOT No:</b> {KOT}</p>
+          <p><b>Payment:</b> <StatusBadge /></p>
+
+          <p><b>Customer:</b> {order.customerName}</p>
+          <p><b>Phone:</b> {order.customerPhone}</p>
+        </div>
+
 
         {/* ITEMS */}
-        <div className="mt-6">
-          <h3 className="text-lg font-bold text-gray-800 mb-3">Order Items</h3>
-
+        <div className="border-t border-b py-4 my-5">
           {order.items.map((item) => (
-            <div
-              key={item._id}
-              className="flex justify-between py-2 border-b text-sm"
-            >
-              <div>
-                <p className="font-semibold text-gray-800">{item.name}</p>
-                <p className="text-gray-500 text-xs">
-                  {item.qty} × ₹{item.price}
-                </p>
-              </div>
-              <p className="font-bold text-gray-900">
-                ₹{item.qty * item.price}
-              </p>
+            <div key={item._id} className="flex justify-between py-2 text-sm font-medium">
+              <span>
+                {item.name} <span className="text-gray-500">(x{item.qty})</span>
+              </span>
+              <span>₹{item.qty * item.price}</span>
             </div>
           ))}
         </div>
 
+        {/* NOTE */}
+        {order.note && (
+          <div className="bg-gray-100 p-3 rounded mb-4 text-sm">
+            <b>Note:</b> {order.note}
+          </div>
+        )}
+
         {/* TOTALS */}
-        <div className="mt-6 border-t pt-4">
-          <div className="flex justify-between text-sm text-gray-700">
-            <p>Subtotal</p>
-            <p>₹{subtotal}</p>
+        <div className="text-sm space-y-2">
+          <div className="flex justify-between">
+            <span>Subtotal</span>
+            <span>₹{subtotal}</span>
           </div>
 
-          <div className="flex justify-between text-sm text-gray-700 mt-2">
-            <p>GST (5%)</p>
-            <p>₹{(subtotal * 0.05).toFixed(0)}</p>
+          <div className="flex justify-between">
+            <span>GST (5%)</span>
+            <span>₹{gstAmount}</span>
           </div>
 
-          <div className="flex justify-between text-lg font-extrabold text-gray-900 mt-3">
-            <p>Total</p>
-            <p>₹{(subtotal * 1.05).toFixed(0)}</p>
+          {order.discount > 0 && (
+            <div className="flex justify-between text-green-600 font-semibold">
+              <span>Coupon Applied ({order.couponCode})</span>
+              <span>-₹{order.discount}</span>
+            </div>
+          )}
+
+          <div className="flex justify-between text-xl font-bold mt-3 border-t pt-3">
+            <span>Total</span>
+            <span>₹{finalTotal}</span>
           </div>
         </div>
 
+
+        {/* QR SECTION */}
+        {paymentStatus !== "paid" && (
+          <div className="mt-10 text-center">
+            <h2 className="text-lg font-bold">Pay via UPI</h2>
+
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(
+                makeUPI(finalTotal)
+              )}`}
+              alt="Payment QR"
+              className="mx-auto border rounded-lg shadow-md mt-3"
+            />
+
+            <p className="text-xs text-gray-500 mt-2">Scan with any UPI app</p>
+            <p className="text-xs text-gray-500">UPI ID: <b>onzaman786-1@okaxis</b></p>
+          </div>
+        )}
+
         {/* FOOTER */}
-        <p className="text-center text-xs text-gray-500 mt-6">
-          Thank you for dining with OneBite ❤️
+        <p className="text-center text-xs text-gray-500 mt-8 border-t pt-4">
+          Thank you for dining with OneBite ❤️  
+          <br />
+          <span className="text-[11px] opacity-70">Made with ❤️ by Aman</span>
         </p>
+      </div>
+
+
+      {/* ACTION BUTTONS */}
+      <div className="flex gap-3 max-w-lg mx-auto mt-6">
+        <button onClick={() => window.print()} className="flex-1 bg-black text-white py-3 rounded-lg">
+          Print Bill
+        </button>
+
+        <button onClick={downloadBill} className="flex-1 bg-blue-600 text-white py-3 rounded-lg">
+          Download Bill
+        </button>
       </div>
     </div>
   );

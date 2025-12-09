@@ -6,6 +6,7 @@ import Order from "@/models/Orders";
 
 
 export async function GET(req, { params }) {
+  console.log("API PARAMS:", params);
   try {
     await connectDB();
 
