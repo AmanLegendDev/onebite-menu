@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, FileText, Timer } from "lucide-react";
+export const dynamic = "force-dynamic";
+
 
 export default function SimpleOrdersHistory() {
   const [orders, setOrders] = useState([]);
