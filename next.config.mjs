@@ -1,10 +1,17 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {},
-   images: {
+  // 🔥 Force Dynamic Runtime (no static export issues)
+  output: "standalone",
+
+  experimental: {
+    serverActions: {
+      allowedOrigins: ["*"],
+    },
+  },
+
+  images: {
     domains: ["res.cloudinary.com"],
   },
 };
 
 export default nextConfig;
-
