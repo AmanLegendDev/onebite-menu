@@ -2,9 +2,6 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Order from "@/models/Orders";
 
-
-
-
 export async function GET(req, { params }) {
   console.log("API PARAMS:", params);
   try {
@@ -32,20 +29,21 @@ export async function GET(req, { params }) {
   }
 }
 
-
 export async function PUT(req, { params }) {
-  await connectDB();
-  const body = await req.json();
-
   try {
+    await connectDB();
+    const body = await req.json();
+
+    // ⭐ IMPORTANT FIX: Partial update allow karo
     const updated = await Order.findByIdAndUpdate(
       params.id,
-      { status: body.status },
+      { $set: body },      // <-- Yaha magic hai
       { new: true }
     );
 
     return NextResponse.json({ success: true, order: updated });
   } catch (err) {
+    console.log("UPDATE ERROR:", err);
     return NextResponse.json({ success: false });
   }
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 export default function CategoriesPage() {
@@ -73,6 +74,12 @@ export default function CategoriesPage() {
   return (
     <div className="py-4 px-2 sm:px-6 text-white">
       <h1 className="text-3xl font-bold mb-6">Categories</h1>
+        <Link
+        href="/admin"
+        className="inline-block mb-4 px-4 py-2 rounded-lg bg-[#111] border border-[#222]"
+      >
+        ← Back
+      </Link>
 
       {/* FORM */}
       <form

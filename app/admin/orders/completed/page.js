@@ -2,66 +2,59 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Search, FileText, Timer } from "lucide-react";
+import { FileText, Timer, CheckCircle2 } from "lucide-react";
 
-export default function SimpleOrdersHistory() {
+export default function CompletedOrdersPage() {
   const [orders, setOrders] = useState([]);
-  const [searchDate, setSearchDate] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadOrders();
+    loadCompleted();
   }, []);
 
-  async function loadOrders() {
+  async function loadCompleted() {
     try {
-      const res = await fetch("/api/orders", { cache: "no-store" });
+      const res = await fetch("/api/orders?status=served", { cache: "no-store" });
       const data = await res.json();
 
-      // ⭐ FILTER at SOURCE — only fully completed orders
-      const completed = (data.orders || []).filter(
-        (o) => o.status === "served" && o.paymentStatus === "paid"
-      );
-
-      // Sort newest → oldest
-      const sorted = completed.sort(
-        (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
+      const sorted = (data.orders || []).sort(
+        (a, b) =>
+          new Date(b.completedAt || b.createdAt) -
+          new Date(a.completedAt || a.createdAt)
       );
 
       setOrders(sorted);
     } catch (err) {
-      console.log("History load error:", err);
+      console.log("Completed load error:", err);
     }
+
     setLoading(false);
   }
 
   function groupByDate(list) {
     const groups = {};
+
     list.forEach((o) => {
-      const date = new Date(o.createdAt).toLocaleDateString("en-IN", {
+      const dt = new Date(o.completedAt || o.createdAt);
+      const date = dt.toLocaleDateString("en-IN", {
         day: "2-digit",
         month: "short",
         year: "numeric",
       });
+
       if (!groups[date]) groups[date] = [];
       groups[date].push(o);
     });
+
     return groups;
   }
 
-  // SEARCH FILTER
-  const filtered = searchDate
-    ? orders.filter(
-        (o) => new Date(o.createdAt).toLocaleDateString("en-CA") === searchDate
-      )
-    : orders;
-
-  const grouped = groupByDate(filtered);
+  const grouped = groupByDate(orders);
   const dates = Object.keys(grouped);
 
   return (
     <div className="p-4 sm:p-6 text-white">
-      {/* HEADER */}
+      {/* BACK BUTTON */}
       <Link
         href="/admin"
         className="inline-block mb-4 px-4 py-2 rounded-lg bg-[#111] border border-[#222]"
@@ -69,39 +62,20 @@ export default function SimpleOrdersHistory() {
         ← Back
       </Link>
 
-      <h1 className="text-3xl font-bold mb-1">Completed Order History</h1>
+      <h1 className="text-3xl font-bold mb-1">Completed Orders</h1>
       <p className="text-gray-400 mb-6">
-        Only fully served + fully paid orders appear here.
+        Only orders marked as <span className="text-green-400 font-semibold">Served</span> appear here.
       </p>
-
-      {/* SEARCH */}
-      <div className="flex items-center gap-3 mb-6 bg-[#111] px-3 py-3 rounded-xl border border-[#222]">
-        <Search className="text-gray-400" size={20} />
-        <input
-          type="date"
-          className="bg-transparent outline-none flex-1 text-white"
-          value={searchDate}
-          onChange={(e) => setSearchDate(e.target.value)}
-        />
-        {searchDate && (
-          <button
-            className="text-sm text-gray-400"
-            onClick={() => setSearchDate("")}
-          >
-            Clear
-          </button>
-        )}
-      </div>
 
       {/* LOADING */}
       {loading && (
-        <p className="text-gray-400 text-center mt-10">Loading history…</p>
+        <p className="text-center text-gray-400 mt-10">Loading…</p>
       )}
 
       {/* EMPTY */}
-      {!loading && dates.length === 0 && (
-        <p className="text-gray-400 text-center mt-10">
-          No completed orders found.
+      {!loading && orders.length === 0 && (
+        <p className="text-center text-gray-500 mt-10">
+          No completed orders yet.
         </p>
       )}
 
@@ -121,7 +95,7 @@ export default function SimpleOrdersHistory() {
                     <div>
                       <div className="text-sm text-gray-400 flex items-center gap-1">
                         <Timer size={14} />
-                        {new Date(o.createdAt).toLocaleString()}
+                        {new Date(o.completedAt || o.createdAt).toLocaleString()}
                       </div>
 
                       <h3 className="text-xl font-semibold mt-1 text-white">
@@ -136,13 +110,13 @@ export default function SimpleOrdersHistory() {
                         KOT: {o.kotId || "N/A"}
                       </p>
 
-                      {/* STATUS */}
-                      <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-600">
-                        COMPLETED
+                      <span className="inline-flex items-center gap-1 bg-green-700/40 text-green-300 px-3 py-1 rounded-full text-xs font-semibold mt-2">
+                        <CheckCircle2 size={14} />
+                        Served
                       </span>
                     </div>
 
-                    {/* BILL BUTTON */}
+                    {/* BILL BTN */}
                     <Link
                       href={`/admin/orders/bill/${o._id}`}
                       className="px-3 py-2 rounded-lg bg-[#222] hover:bg-[#333] text-white flex items-center gap-1"

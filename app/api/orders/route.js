@@ -10,18 +10,32 @@ export const dynamic = "force-dynamic";
 export const revalidate = false;
 
 // ===================== GET ORDERS =====================
+// ===================== GET ORDERS =====================
 export async function GET(req) {
   try {
     await connectDB();
-
     const { searchParams } = new URL(req.url);
+
     const latest = searchParams.get("latest");
+    const status = searchParams.get("status");
 
-    let orders = await Order.find().sort({ createdAt: -1 }).lean();
+    let filter = {};
 
+    if (status) filter.status = status;
+
+    // 👉 If admin wants latest ANY order
     if (latest === "true") {
-      orders = orders.slice(0, 1);
+      const latestOrder = await Order.find({})
+        .sort({ createdAt: -1 })
+        .limit(1)
+        .lean();
+
+      return NextResponse.json({ success: true, orders: latestOrder });
     }
+
+    const orders = await Order.find(filter)
+      .sort({ createdAt: -1 })
+      .lean();
 
     return NextResponse.json({ success: true, orders });
   } catch (err) {
@@ -29,6 +43,8 @@ export async function GET(req) {
     return NextResponse.json({ success: false, orders: [] });
   }
 }
+
+
 
 // ===================== CREATE ORDER (POST) =====================
 export async function POST(req) {
@@ -77,7 +93,10 @@ export async function POST(req) {
     // 5️⃣ Save order with kotId
     orderData.kotId = kotId;
 
-    const newOrder = await Order.create(orderData);
+orderData.createdAt = new Date(); // FORCE UNIQUE TIMESTAMP
+orderData.updatedAt = new Date();
+
+const newOrder = await Order.create(orderData);
 
     // 6️⃣ Decrease Stock
     try {

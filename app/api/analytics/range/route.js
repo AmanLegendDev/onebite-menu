@@ -18,20 +18,22 @@ export async function GET(req) {
 
   const dateMap = {};
 
+  // Fill all days with 0
   for (let i = 0; i <= days; i++) {
     const d = new Date(start);
     d.setDate(start.getDate() + i);
 
     const key = d.toISOString().split("T")[0];
 
-    dateMap[key] = { revenue: 0, orders: 0 };
+    dateMap[key] = { revenue: 0, count: 0 };
   }
 
+  // Assign real values
   for (const o of orders) {
     const key = o.createdAt.toISOString().split("T")[0];
     if (dateMap[key]) {
       dateMap[key].revenue += o.finalPrice || 0;
-      dateMap[key].orders += 1;
+      dateMap[key].count += 1;
     }
   }
 
@@ -39,6 +41,7 @@ export async function GET(req) {
     success: true,
     labels: Object.keys(dateMap),
     revenue: Object.values(dateMap).map(v => v.revenue),
-    orders: Object.values(dateMap).map(v => v.orders),
+    orders: Object.values(dateMap).map(v => v.count),
+    counts: Object.values(dateMap).map(v => v.count), // UI fallback support
   });
 }

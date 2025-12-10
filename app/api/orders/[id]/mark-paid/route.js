@@ -12,7 +12,11 @@ export async function POST(req, { params }) {
       return NextResponse.json({ success: false, message: "Order not found" });
     }
 
-    order.paymentStatus = "paid";
+    // IMPORTANT: these fields must change
+    order.paymentStatus = "paid";       // remove from pending list
+    order.paymentPending = false;       // if you use this field anywhere
+    order.paidAt = new Date();          // for history sorting
+
     await order.save();
 
     return NextResponse.json({ success: true });

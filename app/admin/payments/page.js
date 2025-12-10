@@ -1,102 +1,107 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { CheckCircle, XCircle, Clock } from "lucide-react";
+import { CheckCircle, XCircle, Clock, FileText } from "lucide-react";
+import Link from "next/link";
 
-export default function AdminPaymentsPage() {
+export default function PendingPaymentsPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // POPUP STATE
   const [popup, setPopup] = useState({
     show: false,
     orderId: null,
   });
 
-  async function loadPayments() {
-    const res = await fetch("/api/orders/pending", { cache: "no-store" });
-    const data = await res.json();
-
-    if (data.success) {
-      setOrders(data.orders);
+  async function loadPending() {
+    try {
+      const res = await fetch("/api/orders?payment=pending", {
+        cache: "no-store",
+      });
+      const data = await res.json();
+      setOrders(data.orders || []);
+    } catch (e) {
+      console.log("Pending payment error:", e);
     }
     setLoading(false);
   }
 
   useEffect(() => {
-    loadPayments();
-
-    // auto refresh
-    const interval = setInterval(loadPayments, 7000);
-    return () => clearInterval(interval);
+    loadPending();
+    const int = setInterval(loadPending, 4000);
+    return () => clearInterval(int);
   }, []);
 
+  // ⭐⭐⭐ MARK PAID — UPDATED + INSTANT REMOVE
   async function markPaid(id) {
-    await fetch(`/api/orders/${id}/mark-paid`, { method: "POST" });
-    loadPayments();
+    try {
+      const res = await fetch(`/api/orders/${id}/mark-paid`, {
+        method: "POST",
+      });
+
+      if (!res.ok) {
+        alert("Payment update failed");
+        return;
+      }
+
+      // Remove instantly from UI
+      setOrders((prev) => prev.filter((o) => o._id !== id));
+    } catch (err) {
+      console.log("Mark Paid Error:", err);
+    }
   }
 
-  // Cancel → Popup open
-  function openCancelPopup(id) {
+  function openCancel(id) {
     setPopup({ show: true, orderId: id });
   }
 
-  // Cancel → Confirm YES
   async function confirmCancel() {
-    if (!popup.orderId) return;
-
     await fetch(`/api/orders/${popup.orderId}/cancel-payment`, {
       method: "POST",
     });
 
     setPopup({ show: false, orderId: null });
-    loadPayments();
-  }
-
-  // Cancel → NO
-  function closePopup() {
-    setPopup({ show: false, orderId: null });
+    loadPending();
   }
 
   if (loading)
     return (
-      <div className="p-10 text-center text-gray-400 text-xl">
-        Loading payments...
-      </div>
+      <div className="p-10 text-center text-gray-400">Loading payments…</div>
     );
 
   return (
     <div className="p-6 text-white">
-      <h1 className="text-4xl font-extrabold mb-4">Payment Verification</h1>
-      <p className="text-gray-400 mb-6">Review & confirm customer payments</p>
+      <h1 className="text-3xl font-extrabold mb-4">Pending Payments</h1>
+      <p className="text-gray-400 mb-6">Verify customer payments</p>
+        <Link
+        href="/admin"
+        className="inline-block mb-4 px-4 py-2 rounded-lg bg-[#111] border border-[#222]"
+      >
+        ← Back
+      </Link>
 
       {orders.length === 0 && (
-        <div className="text-center text-gray-500 py-10">
+        <p className="text-center text-gray-500 py-10">
           No pending payments 🎉
-        </div>
+        </p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {orders.map((o) => (
           <div
             key={o._id}
-            className="bg-[#111] border border-[#222] p-5 rounded-xl shadow-lg"
+            className="bg-[#111] border border-[#222] p-5 rounded-xl shadow"
           >
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-xl font-bold">₹{o.finalPrice}</h2>
-
-              {o.paymentStatus === "pending" ? (
-                <Clock className="text-yellow-400" />
-              ) : (
-                <Clock className="text-red-400" />
-              )}
+              <Clock className="text-yellow-400" />
             </div>
 
             <p className="text-gray-300 text-sm">
-              <b>Customer:</b> {o.customerName}
+              <b>Customer:</b> {o.customerName || "Unknown"}
             </p>
             <p className="text-gray-300 text-sm">
-              <b>Phone:</b> {o.customerPhone}
+              <b>Phone:</b> {o.customerPhone || "-"}
             </p>
             <p className="text-gray-300 text-sm">
               <b>Table:</b> {o.tableName}
@@ -104,9 +109,13 @@ export default function AdminPaymentsPage() {
 
             <p className="text-gray-300 text-sm mt-1">
               <b>Method:</b>{" "}
-              <span className="uppercase text-yellow-400">
-                {o.paymentMethod || "Not Selected"}
+              <span className="text-yellow-400 uppercase">
+                {o.paymentMethod || "NOT SELECTED"}
               </span>
+            </p>
+
+            <p className="text-xs text-gray-500 mt-1">
+              KOT: {o.kotId || "N/A"}
             </p>
 
             <div className="flex gap-3 mt-5">
@@ -114,45 +123,51 @@ export default function AdminPaymentsPage() {
                 onClick={() => markPaid(o._id)}
                 className="flex-1 bg-green-600 py-2 rounded-lg flex items-center justify-center gap-2 font-semibold"
               >
-                <CheckCircle size={18} /> Mark Paid
+                <CheckCircle size={18} /> Paid
               </button>
 
               <button
-                onClick={() => openCancelPopup(o._id)}
+                onClick={() => openCancel(o._id)}
                 className="flex-1 bg-red-600 py-2 rounded-lg flex items-center justify-center gap-2 font-semibold"
               >
                 <XCircle size={18} /> Cancel
               </button>
             </div>
+
+            <Link
+              href={`/admin/orders/bill/${o._id}`}
+              className="mt-3 flex items-center justify-center gap-2 text-sm bg-[#222] py-2 rounded-lg"
+            >
+              <FileText size={16} /> View Bill
+            </Link>
           </div>
         ))}
       </div>
 
-      {/* POPUP UI */}
       {popup.show && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-[999]">
-          <div className="bg-[#1a1a1a] border border-[#333] p-6 rounded-xl w-80 text-center">
-            <h2 className="text-lg font-bold mb-2 text-red-400">
-              Payment Not Received?
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-[#1c1c1c] p-6 rounded-xl border border-red-700 shadow-xl w-80 text-center">
+            <h2 className="font-bold text-lg text-red-400 mb-2">
+              Cancel Payment?
             </h2>
 
-            <p className="text-gray-300 text-sm">
-              Do you want to cancel this payment request?
+            <p className="text-gray-300 text-sm mb-4">
+              Are you sure you want to cancel this payment?
             </p>
 
             <div className="flex gap-3 mt-5">
               <button
-                onClick={closePopup}
-                className="flex-1 py-2 bg-gray-600 rounded-lg font-semibold"
+                onClick={() => setPopup({ show: false, orderId: null })}
+                className="flex-1 bg-gray-600 py-2 rounded-lg font-semibold"
               >
                 No
               </button>
 
               <button
                 onClick={confirmCancel}
-                className="flex-1 py-2 bg-red-600 rounded-lg font-semibold"
+                className="flex-1 bg-red-600 py-2 rounded-lg font-semibold"
               >
-                Yes, Cancel
+                Yes
               </button>
             </div>
           </div>

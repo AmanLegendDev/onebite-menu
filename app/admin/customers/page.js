@@ -34,6 +34,12 @@ export default function AdminCustomersPage() {
       <p className="text-gray-400 mb-8">
         Complete list of all registered customers
       </p>
+        <Link
+        href="/admin"
+        className="inline-block mb-4 px-4 py-2 rounded-lg bg-[#111] border border-[#222]"
+      >
+        ← Back
+      </Link>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {users.map((u) => (
