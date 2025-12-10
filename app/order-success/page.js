@@ -7,7 +7,7 @@ export default function OrderSuccessPage() {
   const [order, setOrder] = useState(null);
   const [liveStatus, setLiveStatus] = useState("pending");
 
-  // ⭐ RATING STATES
+  // ⭐ Rating
   const [showRating, setShowRating] = useState(false);
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
@@ -15,28 +15,28 @@ export default function OrderSuccessPage() {
 
   // Load order
   useEffect(() => {
-    const savedOrder = localStorage.getItem("latestOrder");
-    if (savedOrder) {
-      const parsed = JSON.parse(savedOrder);
+    const saved = localStorage.getItem("latestOrder");
+    if (saved) {
+      const parsed = JSON.parse(saved);
       setOrder(parsed);
       setLiveStatus(parsed.status || "pending");
     }
   }, []);
 
-  // Play notification sound (once)
+  // Notification sound
   useEffect(() => {
     const audio = new Audio("/notify.mp3");
     audio.volume = 1;
     audio.play().catch(() => {});
   }, []);
 
-  // ⭐ Show rating only if not submitted
+  // ⭐ Show rating only if not given already
   useEffect(() => {
-    const hasRated = localStorage.getItem("onebite_rating_given");
-    if (!hasRated) setShowRating(true);
+    const rated = localStorage.getItem("onebite_rating_given");
+    if (!rated) setShowRating(true);
   }, []);
 
-  // ⭐ Submit rating → backend + hide stars
+  // ⭐ Submit rating
   async function submitRating(star) {
     setRating(star);
     setPopup(true);
@@ -45,18 +45,23 @@ export default function OrderSuccessPage() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        rating: star,
-        orderId: order?._id,
-        phone: order?.customerPhone,
+        stars: star,                 // ✔ correct name
+        orderId: order?._id,        // ✔ REQUIRED
+        customerName: order?.customerName || "",
+        customerPhone: order?.customerPhone || "",
       }),
     });
 
     localStorage.setItem("onebite_rating_given", "yes");
 
-    setTimeout(() => setShowRating(false), 1200);
+    // Auto close popup + remove stars
+    setTimeout(() => {
+      setPopup(false);
+      setShowRating(false);
+    }, 1500);
   }
 
-  // Live order status poll
+  // Live status polling
   useEffect(() => {
     if (!order?._id) return;
 
@@ -65,7 +70,6 @@ export default function OrderSuccessPage() {
         cache: "no-store",
       });
       const data = await res.json();
-
       if (data?.order?.status) {
         setLiveStatus(data.order.status);
       }
@@ -76,7 +80,7 @@ export default function OrderSuccessPage() {
 
   if (!order) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-xl font-semibold text-white bg-[#0d0d0d]">
+      <div className="min-h-screen flex items-center justify-center text-white">
         Loading your order...
       </div>
     );
@@ -101,23 +105,22 @@ export default function OrderSuccessPage() {
 
       {/* LOGO */}
       <motion.div
-        initial={{ scale: 0, rotate: -180, opacity: 0 }}
-        animate={{ scale: 1, rotate: 0, opacity: 1 }}
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
         transition={{ duration: 0.7, type: "spring" }}
         className="flex justify-center"
       >
         <img
           src="/onebite-2.jpg"
-          className="w-32 h-32 object-cover rounded-full shadow-[0_0_25px_rgba(255,177,0,0.5)] border-2 border-[#FFB100]"
+          className="w-32 h-32 object-cover rounded-full border-2 border-[#FFB100] shadow-[0_0_25px_rgba(255,177,0,0.5)]"
         />
       </motion.div>
 
       {/* ORDER STATUS */}
       <div className="text-center mt-6">
-        <h1 className="text-3xl font-extrabold tracking-wide text-yellow-400">
+        <h1 className="text-3xl font-extrabold text-yellow-400">
           Order Confirmed 🎉
         </h1>
-
         <p className={`mt-2 text-sm font-semibold ${statusColor[liveStatus]}`}>
           {statusText[liveStatus]}
         </p>
@@ -125,21 +128,19 @@ export default function OrderSuccessPage() {
 
       {/* SUMMARY CARD */}
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 15 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-        className="bg-[#111] rounded-2xl shadow-xl p-6 mt-10 border border-[#222]"
+        transition={{ duration: 0.5 }}
+        className="bg-[#111] rounded-2xl border border-[#222] shadow-xl p-6 mt-10"
       >
-        <h2 className="text-xl font-bold mb-5 text-yellow-400">
-          Order Summary
-        </h2>
+        <h2 className="text-xl font-bold mb-5 text-yellow-400">Order Summary</h2>
 
-        {/* ITEMS LIST */}
+        {/* ITEMS */}
         <div className="space-y-4">
           {order.items.map((item) => (
             <div
               key={item._id}
-              className="flex items-center justify-between bg-[#1a1a1a] p-4 rounded-xl border border-[#333] shadow-md"
+              className="flex justify-between bg-[#1a1a1a] p-4 rounded-xl border border-[#333]"
             >
               <div>
                 <p className="font-semibold">{item.name}</p>
@@ -147,7 +148,6 @@ export default function OrderSuccessPage() {
                   {item.qty} × ₹{item.price}
                 </p>
               </div>
-
               <p className="font-extrabold text-[#FF6A3D]">
                 ₹{item.qty * item.price}
               </p>
@@ -157,7 +157,7 @@ export default function OrderSuccessPage() {
 
         <div className="border-t border-gray-700 my-5"></div>
 
-        {/* BILL BREAKDOWN */}
+        {/* BILL */}
         <div className="space-y-2 text-[15px]">
           <div className="flex justify-between">
             <span className="text-gray-400">Subtotal</span>
@@ -166,9 +166,7 @@ export default function OrderSuccessPage() {
 
           {order.discount > 0 && (
             <div className="flex justify-between text-green-400">
-              <span>
-                Discount {order.couponCode ? `(${order.couponCode})` : ""}
-              </span>
+              <span>Discount</span>
               <span>-₹{order.discount}</span>
             </div>
           )}
@@ -180,18 +178,19 @@ export default function OrderSuccessPage() {
         </div>
 
         {/* TABLE */}
-        <div className="mt-6 bg-yellow-400 text-black p-3 rounded-lg text-center font-extrabold text-lg shadow-md">
+        <div className="mt-6 bg-yellow-400 text-black p-3 rounded-lg text-center font-extrabold text-lg">
           Table: {order.table || "—"}
         </div>
-              {/* VIEW BILL BUTTON */}
+
+        {/* BILL PAGE LINK */}
         <button
           onClick={() => (window.location.href = `/bill/${order._id}`)}
-          className="mt-6 w-full bg-[#FF6A3D] hover:bg-[#ff7c50] text-white py-3 rounded-lg font-bold text-sm shadow-lg active:scale-95 transition"
+          className="mt-6 w-full bg-[#FF6A3D] hover:bg-[#ff7c50] text-white py-3 rounded-lg font-bold text-sm shadow-lg active:scale-95"
         >
           View Detailed Bill →
         </button>
 
-        {/* ⭐⭐⭐⭐⭐ RATING SECTION */}
+        {/* ⭐ RATING */}
         {showRating && (
           <div className="mt-10 text-center">
             <p className="text-gray-300 font-semibold text-sm mb-3">
@@ -207,73 +206,56 @@ export default function OrderSuccessPage() {
                   onMouseEnter={() => setHover(star)}
                   onMouseLeave={() => setHover(0)}
                   onClick={() => submitRating(star)}
-                  className={`text-3xl cursor-pointer transition 
-                    ${
-                      star <= (hover || rating)
-                        ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(255,199,0,0.7)]"
-                        : "text-gray-600"
-                    }`}
+                  className={`text-3xl cursor-pointer transition ${
+                    star <= (hover || rating)
+                      ? "text-yellow-400 drop-shadow-[0_0_8px_rgba(255,199,0,0.7)]"
+                      : "text-gray-600"
+                  }`}
                 >
                   ★
                 </motion.span>
-
-                
               ))}
-              
             </div>
           </div>
-          
         )}
-
-
-
 
         {/* POPUP */}
         {popup && (
           <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.4, type: "spring" }}
-            className="fixed inset-0 flex items-center justify-center bg-black/60 z-50"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
           >
-            <div className="bg-[#111] px-8 py-6 rounded-2xl text-center border border-yellow-400/30 shadow-xl">
+            <div className="bg-[#111] p-8 rounded-2xl border border-yellow-400/30 text-center">
               <p className="text-3xl mb-2">⭐ {rating} / 5</p>
               <p className="text-yellow-400 font-bold text-lg">
                 Thank you for your feedback!
-              </p>
-              <p className="text-gray-400 text-sm mt-1">
-                Your rating helps us improve 🍽️
               </p>
             </div>
           </motion.div>
         )}
 
-  
-
-        {/* DATE */}
         <p className="text-center text-gray-500 text-xs mt-4">
           {new Date(order.createdAt).toLocaleString()}
         </p>
-           {/* BACK BUTTON */}
-      <div className="mt-8 text-center">
-        <button
-          onClick={() => {
-            window.location.href = "/menu";
-          }}
-          className="bg-yellow-400 hover:bg-yellow-300 px-10 py-3 rounded-full text-lg font-bold text-black shadow-[0_0_20px_rgba(255,177,0,0.4)] active:scale-95 transition"
-        >
-          Back to Menu
-        </button>
-      </div>
       </motion.div>
 
       {/* FOOTER */}
       <div className="mt-12 text-center opacity-70">
-        <p className="text-xs" >© Made with ❤️ by Aman</p>
+        <p className="text-xs">© Made with ❤️ by Aman</p>
         <p className="text-[10px] text-gray-500">OneBite Menu System</p>
       </div>
 
-   
+      {/* BACK BUTTON */}
+      <div className="mt-8 text-center">
+        <button
+          onClick={() => (window.location.href = "/menu")}
+          className="bg-yellow-400 hover:bg-yellow-300 px-10 py-3 rounded-full text-lg font-bold text-black shadow-[0_0_20px_rgba(255,177,0,0.4)] active:scale-95"
+        >
+          Back to Menu
+        </button>
+      </div>
     </div>
   );
 }

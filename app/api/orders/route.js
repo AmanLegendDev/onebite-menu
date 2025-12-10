@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 import { connectDB } from "@/lib/db";
 import Order from "@/models/Orders";
 import CustomerSession from "@/models/CustomerSession";
+import KOT from "@/models/KOT";
+import Counter from "@/models/Counter";
+import MenuItem from "@/models/MenuItems";
 
 export const dynamic = "force-dynamic";
 export const revalidate = false;
@@ -20,17 +23,6 @@ export async function GET(req) {
       orders = orders.slice(0, 1);
     }
 
-    const kotCounter = await Counter.findOneAndUpdate(
-  { key: "kot" },
-  { $inc: { seq: 1 } },
-  { new: true, upsert: true }
-);
-
-const kotId = `KOT${String(kotCounter.seq).padStart(4, "0")}`;
-order.kotId = kotId;
-await order.save();
-
-
     return NextResponse.json({ success: true, orders });
   } catch (err) {
     console.log("GET Orders Error:", err);
@@ -44,79 +36,83 @@ export async function POST(req) {
     await connectDB();
 
     const body = await req.json();
-
-    // 1️⃣ EXTRACT SESSION ID FROM FRONTEND
     const sessionId = body.customerSessionId;
 
-    // 🔥 DEBUG LOG #1 — sessionId aa raha ya nahi
-    console.log("📌 SESSION ID RECEIVED IN ORDER POST:", sessionId);
+    // 1️⃣ Load customer
+    const customer = sessionId
+      ? await CustomerSession.findOne({ sessionId }).lean()
+      : null;
 
-    // 2️⃣ FETCH CUSTOMER FROM SESSION COLLECTION
-    let customer = null;
-
-    if (sessionId) {
-      customer = await CustomerSession.findOne({ sessionId }).lean();
-    }
-
-    // 🔥 DEBUG LOG #2 — DB me customer mila ya nahi
-    console.log("📌 CUSTOMER FROM DB:", customer);
-
-    // 3️⃣ CREATE ORDER WITH EMBEDDED CUSTOMER FIELDS
+    // 2️⃣ Prepare order base data
     const orderData = {
       ...body,
       customerName: customer?.name || "",
       customerPhone: customer?.phone || "",
       customerSessionId: sessionId || "",
+      discount: body.discount || 0,
+      finalPrice: body.finalPrice || body.totalPrice
     };
 
-     if (orderData.discount == null) {
-      orderData.discount = 0;
-    }
+    // 3️⃣ Generate New KOT Number
+    const kotCounter = await Counter.findOneAndUpdate(
+      { key: "kot" },
+      { $inc: { seq: 1 } },
+      { new: true, upsert: true }
+    );
 
-    if (!orderData.finalPrice || orderData.finalPrice <= 0) {
-      orderData.finalPrice = orderData.totalPrice;
-    }
+    const kotId = `KOT${String(kotCounter.seq).padStart(4, "0")}`;
 
-    // 🔥 DEBUG LOG #3 — Order save hone se pehle data kaisa hai?
-    console.log("📌 FINAL ORDER DATA TO BE SAVED:", orderData);
+    // 4️⃣ Create KOT Entry
+    const kotEntry = await KOT.create({
+      kotId,
+      table: body.table,
+      tableId: body.tableId,
+      customerName: orderData.customerName,
+      customerPhone: orderData.customerPhone,
+      items: body.items.map(i => ({ name: i.name, qty: i.qty })),
+      note: body.note || "",
+      createdAt: new Date()
+    });
 
-    // 4️⃣ SAVE ORDER
-// 4️⃣ SAVE ORDER
-const newOrder = await Order.create(orderData);
+    // 5️⃣ Save order with kotId
+    orderData.kotId = kotId;
 
-// ----- DECREASE STOCK (call internal route logic directly) -----
-// Prepare items for stock decrease (just id + qty)
-try {
-  const itemsToDecrease = (orderData.items || []).map(i => ({
-    id: i._id || i._id?._id || i.id || i._id, // defensive
-    qty: i.qty || 1
-  })).filter(Boolean);
+    const newOrder = await Order.create(orderData);
 
-  if (itemsToDecrease.length) {
-    // Option A: internal call via model logic (preferred)
-    // Use MenuItem.bulkWrite here directly (same logic as decrease route),
-    // to avoid extra HTTP fetch inside server.
-    const bulkOps = itemsToDecrease.map(it => ({
-      updateOne: {
-        filter: { _id: it.id },
-        update: { $inc: { stock: -Math.abs(Number(it.qty) || 0) } }
+    // 6️⃣ Decrease Stock
+    try {
+      const itemsToDecrease = (body.items || []).map(i => ({
+        id: i._id,
+        qty: i.qty
+      }));
+
+      const bulkOps = itemsToDecrease.map(it => ({
+        updateOne: {
+          filter: { _id: it.id },
+          update: { $inc: { stock: -(it.qty || 0) } }
+        }
+      }));
+
+      if (bulkOps.length > 0) {
+        await MenuItem.bulkWrite(bulkOps);
+        await MenuItem.updateMany(
+          { stock: { $lte: 0 } },
+          { $set: { stock: 0, outOfStock: true } }
+        );
+        await MenuItem.updateMany(
+          { stock: { $gt: 0 } },
+          { $set: { outOfStock: false } }
+        );
       }
-    }));
-    await MenuItem.bulkWrite(bulkOps, { ordered: false });
-    await MenuItem.updateMany({ _id: { $in: itemsToDecrease.map(i => i.id) }, stock: { $lte: 0 } }, { $set: { stock: 0, outOfStock: true } });
-    await MenuItem.updateMany({ _id: { $in: itemsToDecrease.map(i => i.id) }, stock: { $gt: 0 } }, { $set: { outOfStock: false } });
-  }
-} catch (e) {
-  console.error("STOCK DECREASE AFTER ORDER SAVE ERROR:", e);
-  // don't fail the order because stock update failed — log & continue
-}
+    } catch (e) {
+      console.error("Stock decrease error:", e);
+    }
 
-// return order
-return NextResponse.json(
-  { success: true, order: newOrder },
-  { status: 201 }
-);
-
+    // 7️⃣ Return response
+    return NextResponse.json(
+      { success: true, order: newOrder },
+      { status: 201 }
+    );
 
   } catch (err) {
     console.log("❌ Order POST Error:", err);

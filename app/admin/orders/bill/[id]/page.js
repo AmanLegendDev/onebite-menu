@@ -60,9 +60,8 @@ export default function AdminBillPage({ params }) {
   }[order.paymentStatus || "unpaid"];
 
   // KOT NUMBER (YOUR OLD STYLE)
-  const kotNo = order.customerSessionId
-    ? order.customerSessionId.slice(-6).toUpperCase()
-    : "N/A";
+const kotNo = order.kotId || "N/A";
+
 
   function downloadBill() {
     const content = document.getElementById("bill-area").innerHTML;

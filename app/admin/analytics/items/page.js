@@ -16,7 +16,7 @@ export default function AnalyticsItemsPage() {
     try {
       const [topRes, lowRes] = await Promise.all([
         fetch("/api/analytics/top-items"),
-        fetch("/api/stock/low"), // your low-stock route (create if missing) => return items with stock<=limit
+        fetch("/api/items/low-stock"), // your low-stock route (create if missing) => return items with stock<=limit
       ]);
       const top = await topRes.json();
       const lowItems = await lowRes.json();

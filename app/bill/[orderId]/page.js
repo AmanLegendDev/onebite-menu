@@ -12,6 +12,8 @@ export default function BillPage({ params }) {
   const [paymentMode, setPaymentMode] = useState(null);
   const [modeLocked, setModeLocked] = useState(false); // payment method locked after selection / after UPI paid
 
+
+  console.log(order)
   // ================= POPUP MODAL =================
   function ConfirmModal({ show, message, onYes, onNo }) {
     if (!show) return null;
