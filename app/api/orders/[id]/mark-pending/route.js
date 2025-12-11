@@ -12,14 +12,19 @@ export async function POST(req, { params }) {
     const order = await Order.findById(id);
     if (!order) return NextResponse.json({ success: false });
 
-    order.paymentStatus = "cancelled";
-    order.paymentMethod = null;
+    // PAYMENT STATUS (customer)
+    order.paymentStatus = "pending";
+
+    // ORDER STATUS (admin dashboard)
+    order.status = "pending";  // <<< IMPORTANT FIX
+
+    order.paidAt = new Date();
 
     await order.save();
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.log("Cancel payment error:", err);
+    console.log("Mark pending error:", err);
     return NextResponse.json({ success: false });
   }
 }
