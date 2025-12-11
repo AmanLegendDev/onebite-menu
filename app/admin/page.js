@@ -132,7 +132,10 @@ useEffect(() => {
 
         <Card
           title="Total Orders"
-          count={orders.length}
+          count={orders.filter(o =>
+  o.status === "served" && o.paymentStatus === "paid"
+).length}
+
           icon={ShoppingBag}
           href="/admin/orders/history"
         />
@@ -180,7 +183,10 @@ useEffect(() => {
 
         <Card
           title="Completed Orders"
-          count={orders.filter(o => o.status === "served").length}
+          count={orders.filter(o => 
+  o.status === "served" && o.paymentStatus === "paid"
+).length}
+
           icon={TrendingUp}
           href="/admin/orders/completed"
         />

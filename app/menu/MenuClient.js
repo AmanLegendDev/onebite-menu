@@ -25,6 +25,19 @@ export default function MenuClient({
   const [customer, setCustomer] = useState(null);
   const [localTableInfo, setLocalTableInfo] = useState(tableInfo);
 
+
+useEffect(() => {
+  const done = sessionStorage.getItem("orderCompleted");
+  if (done) {
+    localStorage.removeItem("cart");
+    sessionStorage.removeItem("cart");
+    sessionStorage.removeItem("selectedItems");
+    sessionStorage.removeItem("orderCompleted");
+  }
+}, []);
+
+
+
   // Load customer (name + phone) from localStorage
   useEffect(() => {
     if (typeof window === "undefined") return;

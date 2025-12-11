@@ -18,18 +18,24 @@ export async function GET(req) {
 
     const latest = searchParams.get("latest");
     const status = searchParams.get("status");
+    const payment = searchParams.get("payment");
 
     let filter = {};
 
+    // STATUS FILTER (order flow)
     if (status) filter.status = status;
 
-    // 👉 If admin wants latest ANY order
+    // PAYMENT FILTER (your bug fix)
+    if (payment === "pending") filter.paymentStatus = "pending";
+    if (payment === "paid") filter.paymentStatus = "paid";
+    if (payment === "cancelled") filter.paymentStatus = "cancelled";
+
+    // latest order fetch
     if (latest === "true") {
       const latestOrder = await Order.find({})
         .sort({ createdAt: -1 })
         .limit(1)
         .lean();
-
       return NextResponse.json({ success: true, orders: latestOrder });
     }
 
@@ -43,6 +49,7 @@ export async function GET(req) {
     return NextResponse.json({ success: false, orders: [] });
   }
 }
+
 
 
 

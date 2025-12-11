@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import html2canvas from "html2canvas";
+import { formatDateTime } from "@/lib/formatDate";
 
 export default function BillPage({ params }) {
   const { orderId } = params;
@@ -248,7 +249,7 @@ export default function BillPage({ params }) {
               Contact: <span className="font-bold">7812050001</span>
             </p>
             <p className="text-sm mt-3">
-              <b>Date:</b> {new Date(order.createdAt).toLocaleString()}
+              <b>Date:</b> {formatDateTime(order.createdAt)}
             </p>
           </div>
 

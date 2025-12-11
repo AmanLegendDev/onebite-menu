@@ -34,12 +34,18 @@ export default function UserOrderHistoryPage() {
     <div className="p-6 text-white">
       <h1 className="text-3xl font-extrabold mb-2">Customer Orders</h1>
       <p className="text-gray-400 mb-6">Phone: {phone}</p>
+              <Link
+          href="/admin/customers"
+          className=" px-4 py-2 rounded-lg bg-[#111] border border-[#222] hover:border-yellow-400 transition"
+        >
+          ← Back
+        </Link>
 
       {orders.length === 0 && (
         <p className="text-gray-500 text-lg">No orders yet.</p>
       )}
 
-      <div className="space-y-6">
+      <div className="space-y-6 mt-6">
         {orders.map((o) => (
           <div
             key={o._id}

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Timer, Check, XCircle } from "lucide-react";
 import Link from "next/link";
+import { formatDateTime } from "@/lib/formatDate";
 
 export default function PendingOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -75,7 +76,7 @@ export default function PendingOrdersPage() {
         className="bg-[#111] border border-[#222] rounded-xl p-6 cursor-pointer hover:border-yellow-400 transition"
       >
         <p className="text-xs text-gray-500 flex items-center gap-1">
-          <Timer size={14} /> {new Date(o.createdAt).toLocaleString()}
+          <Timer size={14} />{formatDateTime(o.createdAt)}
         </p>
 
         <div className="flex justify-between items-center mt-2">
@@ -148,7 +149,7 @@ export default function PendingOrdersPage() {
             </h2>
 
             <p className="text-xs text-gray-500">
-              {new Date(selectedOrder.createdAt).toLocaleString()}
+              {formatDateTime(selectedOrder.createdAt)}
             </p>
 
             <div className="max-h-64 overflow-y-auto mt-5 space-y-3">

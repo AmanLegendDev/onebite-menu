@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, FileText, Timer } from "lucide-react";
 export const dynamic = "force-dynamic";
+import { formatDateTime, formatDateOnly } from "@/lib/formatDate";
 
 
 export default function SimpleOrdersHistory() {
@@ -37,26 +38,22 @@ export default function SimpleOrdersHistory() {
     setLoading(false);
   }
 
-  function groupByDate(list) {
-    const groups = {};
-    list.forEach((o) => {
-      const date = new Date(o.createdAt).toLocaleDateString("en-IN", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      });
-      if (!groups[date]) groups[date] = [];
-      groups[date].push(o);
-    });
-    return groups;
-  }
+function groupByDate(list) {
+  const groups = {};
+  list.forEach((o) => {
+    const date = formatDateTime(o.createdAt).split(",")[0]; // DD/MM/YYYY
+    if (!groups[date]) groups[date] = [];
+    groups[date].push(o);
+  });
+  return groups;
+}
+
 
   // SEARCH FILTER
-  const filtered = searchDate
-    ? orders.filter(
-        (o) => new Date(o.createdAt).toLocaleDateString("en-CA") === searchDate
-      )
-    : orders;
+const filtered = searchDate
+  ? orders.filter((o) => formatDateOnly(o.createdAt) === searchDate)
+  : orders;
+
 
   const grouped = groupByDate(filtered);
   const dates = Object.keys(grouped);
@@ -123,7 +120,8 @@ export default function SimpleOrdersHistory() {
                     <div>
                       <div className="text-sm text-gray-400 flex items-center gap-1">
                         <Timer size={14} />
-                        {new Date(o.createdAt).toLocaleString()}
+                        {formatDateTime(o.createdAt)}
+
                       </div>
 
                       <h3 className="text-xl font-semibold mt-1 text-white">
