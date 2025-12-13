@@ -32,7 +32,7 @@ export default function PendingPaymentsPage() {
     return () => clearInterval(int);
   }, []);
 
-  // ⭐⭐⭐ MARK PAID — UPDATED + INSTANT REMOVE
+  // ✅ MARK PAID
   async function markPaid(id) {
     try {
       const res = await fetch(`/api/orders/${id}/mark-paid`, {
@@ -44,7 +44,6 @@ export default function PendingPaymentsPage() {
         return;
       }
 
-      // Remove instantly from UI
       setOrders((prev) => prev.filter((o) => o._id !== id));
     } catch (err) {
       console.log("Mark Paid Error:", err);
@@ -64,18 +63,89 @@ export default function PendingPaymentsPage() {
     loadPending();
   }
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="p-10 text-center text-gray-400">Loading payments…</div>
+      <div className="p-10 text-center text-gray-400">
+        Loading payments…
+      </div>
     );
+  }
+
+  // 🔥 SPLIT LOGIC (NO BACKEND CHANGE)
+  const methodSelected = orders.filter(
+    (o) => o.paymentMethod && o.paymentMethod !== ""
+  );
+
+  const methodNotSelected = orders.filter(
+    (o) => !o.paymentMethod || o.paymentMethod === ""
+  );
+
+  function PaymentCard(o) {
+    return (
+      <div
+        key={o._id}
+        className="bg-[#111] border border-[#222] p-5 rounded-xl shadow"
+      >
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-bold">₹{o.finalPrice}</h2>
+          <Clock className="text-yellow-400" />
+        </div>
+
+        <p className="text-gray-300 text-sm">
+          <b>Customer:</b> {o.customerName || "Unknown"}
+        </p>
+        <p className="text-gray-300 text-sm">
+          <b>Phone:</b> {o.customerPhone || "-"}
+        </p>
+        <p className="text-gray-300 text-sm">
+          <b>Table:</b> {o.tableName}
+        </p>
+
+        <p className="text-gray-300 text-sm mt-1">
+          <b>Method:</b>{" "}
+          <span className="text-yellow-400 uppercase">
+            {o.paymentMethod || "NOT SELECTED"}
+          </span>
+        </p>
+
+        <p className="text-xs text-gray-500 mt-1">
+          KOT: {o.kotId || "N/A"}
+        </p>
+
+        <div className="flex gap-3 mt-5">
+          <button
+            onClick={() => markPaid(o._id)}
+            className="flex-1 bg-green-600 py-2 rounded-lg flex items-center justify-center gap-2 font-semibold"
+          >
+            <CheckCircle size={18} /> Paid
+          </button>
+
+          <button
+            onClick={() => openCancel(o._id)}
+            className="flex-1 bg-red-600 py-2 rounded-lg flex items-center justify-center gap-2 font-semibold"
+          >
+            <XCircle size={18} /> Cancel
+          </button>
+        </div>
+
+        <Link
+          href={`/admin/orders/bill/${o._id}`}
+          className="mt-3 flex items-center justify-center gap-2 text-sm bg-[#222] py-2 rounded-lg"
+        >
+          <FileText size={16} /> View Bill
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 text-white">
-      <h1 className="text-3xl font-extrabold mb-4">Pending Payments</h1>
-      <p className="text-gray-400 mb-6">Verify customer payments</p>
-        <Link
+      <h1 className="text-3xl font-extrabold mb-2">Pending Payments</h1>
+      <p className="text-gray-400 mb-4">Verify customer payments</p>
+
+      <Link
         href="/admin"
-        className="inline-block mb-4 px-4 py-2 rounded-lg bg-[#111] border border-[#222]"
+        className="inline-block mb-6 px-4 py-2 rounded-lg bg-[#111] border border-[#222]"
       >
         ← Back
       </Link>
@@ -86,64 +156,33 @@ export default function PendingPaymentsPage() {
         </p>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {orders.map((o) => (
-          <div
-            key={o._id}
-            className="bg-[#111] border border-[#222] p-5 rounded-xl shadow"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xl font-bold">₹{o.finalPrice}</h2>
-              <Clock className="text-yellow-400" />
-            </div>
+      {/* 🔝 METHOD SELECTED */}
+      {methodSelected.length > 0 && (
+        <>
+          <h2 className="text-xl font-bold text-green-400 mb-3">
+            Payment Method Selected
+          </h2>
 
-            <p className="text-gray-300 text-sm">
-              <b>Customer:</b> {o.customerName || "Unknown"}
-            </p>
-            <p className="text-gray-300 text-sm">
-              <b>Phone:</b> {o.customerPhone || "-"}
-            </p>
-            <p className="text-gray-300 text-sm">
-              <b>Table:</b> {o.tableName}
-            </p>
-
-            <p className="text-gray-300 text-sm mt-1">
-              <b>Method:</b>{" "}
-              <span className="text-yellow-400 uppercase">
-                {o.paymentMethod || "NOT SELECTED"}
-              </span>
-            </p>
-
-            <p className="text-xs text-gray-500 mt-1">
-              KOT: {o.kotId || "N/A"}
-            </p>
-
-            <div className="flex gap-3 mt-5">
-              <button
-                onClick={() => markPaid(o._id)}
-                className="flex-1 bg-green-600 py-2 rounded-lg flex items-center justify-center gap-2 font-semibold"
-              >
-                <CheckCircle size={18} /> Paid
-              </button>
-
-              <button
-                onClick={() => openCancel(o._id)}
-                className="flex-1 bg-red-600 py-2 rounded-lg flex items-center justify-center gap-2 font-semibold"
-              >
-                <XCircle size={18} /> Cancel
-              </button>
-            </div>
-
-            <Link
-              href={`/admin/orders/bill/${o._id}`}
-              className="mt-3 flex items-center justify-center gap-2 text-sm bg-[#222] py-2 rounded-lg"
-            >
-              <FileText size={16} /> View Bill
-            </Link>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
+            {methodSelected.map(PaymentCard)}
           </div>
-        ))}
-      </div>
+        </>
+      )}
 
+      {/* 🔽 METHOD NOT SELECTED */}
+      {methodNotSelected.length > 0 && (
+        <>
+          <h2 className="text-xl font-bold text-red-400 mb-3">
+            Payment Method NOT Selected
+          </h2>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {methodNotSelected.map(PaymentCard)}
+          </div>
+        </>
+      )}
+
+      {/* ❌ CANCEL POPUP */}
       {popup.show && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-[#1c1c1c] p-6 rounded-xl border border-red-700 shadow-xl w-80 text-center">
