@@ -245,10 +245,7 @@ export default function OrderSuccessPage() {
           Table: {order.table || "—"}
         </div>
 
-        {/* 🔥 BILL INFO BANNER */}
-        <div className="mt-4 bg-[#222] border border-yellow-500/40 text-yellow-300 text-center p-2 rounded-lg text-sm">
-          Payment will be completed on the bill page.
-        </div>
+
 
         {/* BILL BUTTON */}
         <button
@@ -257,6 +254,11 @@ export default function OrderSuccessPage() {
         >
           View Detailed Bill →
         </button>
+
+                {/* 🔥 BILL INFO BANNER */}
+        <div className="mt-4 bg-[#222] border border-yellow-500/40 text-yellow-300 text-center p-2 rounded-lg text-sm">
+          Payment will be completed on the bill page.
+        </div>
 
         {/* ⭐ RATING */}
         {showRating && (
@@ -324,6 +326,6 @@ export default function OrderSuccessPage() {
           Back to Menu
         </button>
       </div>
-    </div>
+     </div>
   );
 }

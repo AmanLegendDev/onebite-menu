@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+
+import { useState } from "react";
+import { useLayoutEffect } from "react";
+import { usePathname } from "next/navigation";
+
 import Link from "next/link";
 import {
   Layers,
@@ -14,13 +18,24 @@ import {
   Wallet,
   LayoutGrid
 } from "lucide-react";
+import { useEffect } from "react";
+
 
 export default function AdminDashboard() {
+  const pathname = usePathname();
+
   const [categories, setCategories] = useState([]);
   const [items, setItems] = useState([]);
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]);
   const [rating, setRating] = useState({ average: 0, total: 0 });
+
+  useEffect(() => {
+  if ('scrollRestoration' in window.history) {
+    window.history.scrollRestoration = 'manual';
+  }
+}, []);
+
 
   // 🔥 LIVE DASHBOARD POLLING
 useEffect(() => {
@@ -34,6 +49,39 @@ useEffect(() => {
 
   return () => clearInterval(interval);
 }, []);
+
+
+useEffect(() => {
+  const el = document.getElementById("admin-scroll");
+  if (!el) return;
+
+  const onScroll = () => {
+    sessionStorage.setItem(
+      "admin-dashboard-scroll",
+      el.scrollTop.toString()
+    );
+  };
+
+  el.addEventListener("scroll", onScroll);
+  return () => el.removeEventListener("scroll", onScroll);
+}, []);
+
+
+
+
+
+// ✅ RESTORE SCROLL POSITION
+useLayoutEffect(() => {
+  const el = document.getElementById("admin-scroll");
+  const saved = sessionStorage.getItem("admin-dashboard-scroll");
+
+  if (el && saved) {
+    el.scrollTop = parseInt(saved, 10);
+  }
+}, []);
+
+
+
 
 
   // ⭐ LOADERS (no backend change)
@@ -76,29 +124,49 @@ useEffect(() => {
     loadUsers();
     loadRating();
   }, []);
+function Card({ title, count, icon: Icon, href }) {
+  const handleClick = () => {
+    sessionStorage.setItem(
+      "admin-dashboard-scroll",
+      window.scrollY.toString()
+    );
+  };
 
-  // ⭐ Card Component
-  function Card({ title, count, icon: Icon, href }) {
-    return (
-      <Link href={href}>
-        <div className="p-6 bg-[#111] rounded-xl border border-[#222] hover:border-yellow-400 transition shadow-md hover:shadow-yellow-500/10 cursor-pointer">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-300">{title}</h2>
-            <Icon size={24} className="text-gray-400" />
-          </div>
-
-          <p className="text-4xl font-bold text-white mt-3">{count}</p>
-
-          <div className="text-yellow-400 text-xs mt-2 flex items-center gap-1">
-            View →
-          </div>
-        </div>
-      </Link>
+  const handleClickForScrool = () => {
+  const el = document.getElementById("admin-scroll");
+  if (el) {
+    sessionStorage.setItem(
+      "admin-dashboard-scroll",
+      el.scrollTop.toString()
     );
   }
+};
 
   return (
-    <div className="pt-4">
+    <Link href={href} onClick={handleClickForScrool}>
+      <div className="p-6 bg-[#111] rounded-xl border border-[#222] hover:border-yellow-400 transition shadow-md hover:shadow-yellow-500/10 cursor-pointer">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-gray-300">{title}</h2>
+          <Icon size={24} className="text-gray-400" />
+        </div>
+
+        <p className="text-4xl font-bold text-white mt-3">{count}</p>
+
+        <div className="text-yellow-400 text-xs mt-2 flex items-center gap-1">
+          View →
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+
+  return (
+    <div
+  id="admin-scroll"
+  className="pt-4 h-[calc(100vh-64px)] overflow-y-auto"
+>
+
       {/* HEADER */}
       <div className="text-center mb-10">
         <h1 className="text-4xl font-bold text-white">Admin Dashboard</h1>

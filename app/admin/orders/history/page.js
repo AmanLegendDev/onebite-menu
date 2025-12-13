@@ -3,9 +3,53 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Search, FileText, Timer } from "lucide-react";
-export const dynamic = "force-dynamic";
-import { formatDateTime, formatDateOnly } from "@/lib/formatDate";
 
+export const dynamic = "force-dynamic";
+
+/* ------------------ DATE HELPERS (IMPORTANT) ------------------ */
+
+// Mongo UTC → Local YYYY-MM-DD (browser compatible)
+function getLocalDateKey(date) {
+  const d = new Date(date);
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`; // YYYY-MM-DD
+}
+
+// For UI heading (human readable)
+function displayDate(dateKey) {
+  const d = new Date(dateKey);
+  return d.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+}
+
+// Full date + time for row
+function formatDateTime(date) {
+  return new Date(date).toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+// Group orders by local date
+function groupByDate(list) {
+  const groups = {};
+  list.forEach((o) => {
+    const key = getLocalDateKey(o.createdAt);
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(o);
+  });
+  return groups;
+}
+
+/* ------------------ COMPONENT ------------------ */
 
 export default function SimpleOrdersHistory() {
   const [orders, setOrders] = useState([]);
@@ -20,47 +64,45 @@ export default function SimpleOrdersHistory() {
     try {
       const res = await fetch("/api/orders", { cache: "no-store" });
       const data = await res.json();
+console.log(
+  data.orders?.map(o => ({
+    status: o.status,
+    paymentStatus: o.paymentStatus,
+    createdAt: o.createdAt
+  }))
+);
 
-      // ⭐ FILTER at SOURCE — only fully completed orders
+      // ✅ Only fully completed orders
       const completed = (data.orders || []).filter(
         (o) => o.status === "served" && o.paymentStatus === "paid"
       );
 
-      // Sort newest → oldest
-      const sorted = completed.sort(
+      // Newest → Oldest
+      completed.sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
       );
 
-      setOrders(sorted);
+      setOrders(completed);
     } catch (err) {
-      console.log("History load error:", err);
+      console.error("History load error:", err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
 
-function groupByDate(list) {
-  const groups = {};
-  list.forEach((o) => {
-    const date = formatDateTime(o.createdAt).split(",")[0]; // DD/MM/YYYY
-    if (!groups[date]) groups[date] = [];
-    groups[date].push(o);
-  });
-  return groups;
-}
-
-
-  // SEARCH FILTER
-const filtered = searchDate
-  ? orders.filter((o) => formatDateOnly(o.createdAt) === searchDate)
-  : orders;
-
+  // ✅ Date filter (timezone safe)
+  const filtered = searchDate
+    ? orders.filter((o) => getLocalDateKey(o.createdAt) === searchDate)
+    : orders;
 
   const grouped = groupByDate(filtered);
-  const dates = Object.keys(grouped);
+  const dates = Object.keys(grouped).sort(
+    (a, b) => new Date(b) - new Date(a)
+  );
 
   return (
     <div className="p-4 sm:p-6 text-white">
-      {/* HEADER */}
+      {/* BACK */}
       <Link
         href="/admin"
         className="inline-block mb-4 px-4 py-2 rounded-lg bg-[#111] border border-[#222]"
@@ -68,9 +110,10 @@ const filtered = searchDate
         ← Back
       </Link>
 
+      {/* HEADER */}
       <h1 className="text-3xl font-bold mb-1">Completed Order History</h1>
       <p className="text-gray-400 mb-6">
-        Only fully served + fully paid orders appear here.
+        Only fully served and fully paid orders are shown.
       </p>
 
       {/* SEARCH */}
@@ -92,26 +135,29 @@ const filtered = searchDate
         )}
       </div>
 
-      {/* LOADING */}
+      {/* STATES */}
       {loading && (
-        <p className="text-gray-400 text-center mt-10">Loading history…</p>
+        <p className="text-gray-400 text-center mt-10">
+          Loading order history…
+        </p>
       )}
 
-      {/* EMPTY */}
       {!loading && dates.length === 0 && (
         <p className="text-gray-400 text-center mt-10">
           No completed orders found.
         </p>
       )}
 
-      {/* GROUPED ORDERS */}
+      {/* ORDERS */}
       <div className="space-y-10">
-        {dates.map((date) => (
-          <div key={date}>
-            <h2 className="text-xl font-bold text-green-400 mb-3">{date}</h2>
+        {dates.map((dateKey) => (
+          <div key={dateKey}>
+            <h2 className="text-xl font-bold text-green-400 mb-3">
+              {displayDate(dateKey)}
+            </h2>
 
             <div className="space-y-3">
-              {grouped[date].map((o) => (
+              {grouped[dateKey].map((o) => (
                 <div
                   key={o._id}
                   className="bg-[#0f0f0f] p-4 rounded-xl border border-[#222]"
@@ -121,7 +167,6 @@ const filtered = searchDate
                       <div className="text-sm text-gray-400 flex items-center gap-1">
                         <Timer size={14} />
                         {formatDateTime(o.createdAt)}
-
                       </div>
 
                       <h3 className="text-xl font-semibold mt-1 text-white">
@@ -136,13 +181,12 @@ const filtered = searchDate
                         KOT: {o.kotId || "N/A"}
                       </p>
 
-                      {/* STATUS */}
                       <span className="inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-green-600">
                         COMPLETED
                       </span>
                     </div>
 
-                    {/* BILL BUTTON */}
+                    {/* BILL */}
                     <Link
                       href={`/admin/orders/bill/${o._id}`}
                       className="px-3 py-2 rounded-lg bg-[#222] hover:bg-[#333] text-white flex items-center gap-1"

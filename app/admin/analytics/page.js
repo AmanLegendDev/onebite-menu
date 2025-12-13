@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useEffect, useCallback, useRef } from "react";
 import useAutoRefresh from "@/app/hooks/useAutoRefresh";
-import { formatDateTime } from "@/lib/formatDate";
+import { formatDateTime } from "@/lib/formatDate"; 
 import { Layers, Utensils, TrendingUp, Wallet } from "lucide-react";
 
 /**
@@ -326,15 +326,45 @@ function CustomersSection() {
       ) : list.length === 0 ? (
         <p className="text-gray-400">No customer data yet.</p>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {list.map((c, i) => (
-            <div key={c.phone || i} className="bg-[#111] p-4 rounded-xl border border-gray-800">
-              <div className="font-bold">{i + 1}. {c.phone}</div>
-              <p className="text-sm text-gray-400">Revenue: ₹{c.revenue}</p>
-              <p className="text-xs text-gray-500">{c.orders} orders</p>
-            </div>
-          ))}
+<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+  {list.map((c, i) => (
+    <div
+      key={c.phone || i}
+      className="bg-[#111] p-4 rounded-xl border border-gray-800 flex flex-col justify-between"
+    >
+      <div>
+        <div className="font-bold">
+          {i + 1}. {c.phone}
         </div>
+        <p className="text-sm text-gray-400">Revenue: ₹{c.revenue}</p>
+        <p className="text-xs text-gray-500">{c.orders} orders</p>
+      </div>
+
+      {/* Coupon Action */}
+      <Link href={`/admin/customers/${c.phone}/coupon`}>
+      <button
+        onClick={() => {
+          // future: open coupon modal / send coupon
+          console.log("Give coupon to", c.phone);
+        }}
+        
+        className="
+          mt-4 w-fit px-4 py-2
+          bg-yellow-400 text-black
+          text-sm font-semibold
+          rounded-lg
+          hover:bg-yellow-300
+          transition
+          shadow-md hover:shadow-yellow-400/30
+        "
+      >
+        🎁 Give Coupon
+      </button>
+      </Link>
+    </div>
+  ))}
+</div>
+
       )}
     </>
   );

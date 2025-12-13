@@ -451,6 +451,14 @@ useEffect(() => {
             <span className="text-[11px] opacity-70">Powered by Aman Digital Solutions</span>
           </p>
         </div>
+                    <div className="mt-8 text-center">
+        <button
+          onClick={() => (window.location.href = "/order-success")}
+          className="bg-black hover:bg-yellow-500 px-10 py-3 rounded-full text-lg font-bold text-white shadow-[0_0_20px_rgba(255,177,0,0.4)] active:scale-95"
+        >
+          Back to Order
+        </button>
+      </div>
 
         {/* actions */}
         <div className="flex gap-3 max-w-lg mx-auto mt-6">
@@ -458,6 +466,7 @@ useEffect(() => {
           <button onClick={downloadBillImage} className="flex-1 bg-blue-600 text-white py-3 rounded-lg">Download Bill</button>
         </div>
       </div>
+
     </>
   );
 }
