@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { formatDateTime } from "@/lib/formatDate";
+import { useCart } from "@/app/context/CartContext";
 
 export default function OrderSuccessPage() {
   const [order, setOrder] = useState(null);
@@ -13,6 +14,7 @@ export default function OrderSuccessPage() {
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [popup, setPopup] = useState(false);
+  const { clearCart } = useCart();
 
   // 🔥 CANCEL POPUP
   const [cancelled, setCancelled] = useState(false);
@@ -28,12 +30,12 @@ export default function OrderSuccessPage() {
   }, []);
 
   // Clear cart completely
-  useEffect(() => {
-    sessionStorage.setItem("orderCompleted", "yes");
-    localStorage.removeItem("cart");
-    sessionStorage.removeItem("cart");
-    sessionStorage.removeItem("selectedItems");
-  }, []);
+
+useEffect(() => {
+  sessionStorage.setItem("orderCompleted", "yes");
+  clearCart(); // 🔥 THIS LINE FIXES EVERYTHING
+  sessionStorage.removeItem("selectedItems");
+}, []);
 
   // Notification sound
   useEffect(() => {
