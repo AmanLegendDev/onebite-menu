@@ -5,6 +5,8 @@ import { useState } from "react";
 import { useLayoutEffect } from "react";
 import { usePathname } from "next/navigation";
 
+
+
 import Link from "next/link";
 import {
   Layers,
@@ -264,6 +266,19 @@ function Card({ title, count, icon: Icon, href }) {
       <h3 className="text-lg font-semibold text-gray-300 mb-3">Payments</h3>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+
+
+<Card
+  title="Payment Not Selected"
+  count={orders.filter(
+    o =>
+      (o.paymentStatus === "unpaid" || o.paymentStatus === "pending") &&
+      (!o.paymentMethod || o.paymentMethod === "")
+  ).length}
+  icon={AlertTriangle}
+  href="/admin/payments/not-selected"
+/>
+
 
         <Card
           title="Pending Payments"

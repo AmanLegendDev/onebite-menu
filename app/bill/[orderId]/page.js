@@ -161,10 +161,10 @@ useEffect(() => {
           // mark pending immediately for cash
           await fetch(`/api/orders/${orderId}/mark-pending`, { method: "POST" });
           setOrder((prev) => ({ ...prev, paymentStatus: "pending", paymentMethod: "cash" }));
-        } else {
+        } 
           // UPI selected — do not mark pending yet, just set paymentMethod
-          setOrder((prev) => ({ ...prev, paymentMethod: "upi" }));
-        }
+          
+        
       } catch (err) {
         console.error("chooseMode error:", err);
         alert("Network error — try again");
