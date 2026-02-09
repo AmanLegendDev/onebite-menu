@@ -61,6 +61,7 @@ export default function LoginPage() {
         )}
 
         <div className="space-y-1">
+        <h1 className="font-bold text-center">onebite@admin.com</h1>
           <label className="text-sm text-gray-300">Email</label>
           <input
             name="email"
@@ -72,6 +73,7 @@ export default function LoginPage() {
         </div>
 
         <div className="space-y-1">
+          <h1 className="font-bold text-center">onebiteadmin123</h1>
           <label className="text-sm text-gray-300">Password</label>
           <input
             name="password"

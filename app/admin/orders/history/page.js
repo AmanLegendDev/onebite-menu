@@ -170,7 +170,7 @@ console.log(
                       </div>
 
                       <h3 className="text-xl font-semibold mt-1 text-white">
-                        Table {o.tableName || o.table}
+                        { o.table}
                       </h3>
 
                       <p className="text-gray-400 text-sm mt-1">

@@ -145,7 +145,7 @@ export default function PendingOrdersPage() {
             </button>
 
             <h2 className="text-2xl font-bold text-yellow-400">
-              Table {selectedOrder.tableName || selectedOrder.table}
+               {selectedOrder.tableName || selectedOrder.table}
             </h2>
 
             <p className="text-xs text-gray-500">
